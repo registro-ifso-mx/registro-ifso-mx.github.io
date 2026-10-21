@@ -126,6 +126,12 @@
       <div class="grid">
         <div class="field"><label for="fecha">Fecha de cirugía</label><input id="fecha" name="fecha" type="date" required></div>
         <div class="field"><label for="folio">Folio / iniciales</label><input id="folio" name="folio" placeholder="Sin nombre completo" maxlength="20"></div>
+        <div class="field wide"><label>Hospital donde se operó</label>
+          <div class="seg" id="seg-hosp"></div>
+          <div class="hosp-add" id="hosp-add" hidden><input id="hosp-nombre" placeholder="Nombre del hospital o clínica" maxlength="120"><button class="btn primary" type="button" id="hosp-save">Agregar</button><button class="btn link" type="button" id="hosp-cancel">Cancelar</button></div>
+          <button class="btn link" type="button" id="hosp-open">+ Agregar hospital</button>
+          <span class="hint" id="hosp-hint">Si operas en varios hospitales, agrégalos aquí una vez; después solo tocas el que corresponde.</span>
+        </div>
       </div>
     </fieldset>
     <fieldset>
@@ -201,9 +207,10 @@
     <span class="count" id="count-registros"></span>
   </div>
   <p class="hint" id="hint-registros" style="margin:0 0 10px">Toca un renglón para editarlo.</p>
+  <div class="banner" id="aviso-hosp" hidden></div>
   <div class="tablewrap">
     <table>
-      <thead><tr><th>Fecha</th><th id="th-centro" hidden>Centro</th><th>Folio</th><th>Sexo</th><th class="num">Edad</th><th class="num">IMC</th><th>Perfil</th><th>Tipo</th><th>Proc.</th><th>Abordaje</th><th>Comorb.</th><th class="num">Estancia</th><th>Eventos</th><th></th></tr></thead>
+      <thead><tr><th>Fecha</th><th id="th-centro" hidden>Centro</th><th>Hospital</th><th>Folio</th><th>Sexo</th><th class="num">Edad</th><th class="num">IMC</th><th>Perfil</th><th>Tipo</th><th>Proc.</th><th>Abordaje</th><th>Comorb.</th><th class="num">Estancia</th><th>Eventos</th><th></th></tr></thead>
       <tbody id="tbody-registros"></tbody>
     </table>
     <div class="empty" id="empty-registros">Todavía no hay pacientes registrados.</div>
@@ -379,7 +386,7 @@
 
   // ---------- estado ----------
   let recuperando = /type=recovery/.test(location.hash + location.search);
-  let user = null, perfil = null, centros = [], pacientes = [], perfiles = [], invitaciones = [], sedes = [], registroCerrado = true, pendingDelete = null, tabActual = null;
+  let user = null, perfil = null, centros = [], hospitales = [], pacientes = [], perfiles = [], invitaciones = [], sedes = [], registroCerrado = true, pendingDelete = null, tabActual = null;
   const esAdmin = () => perfil && perfil.rol === 'admin';
   const centroNombre = id => (centros.find(c => c.id === id) || {}).nombre || '—';
 
@@ -482,11 +489,12 @@
     if (tab === 'exportar') llenarAnios($('#ex-anio'), false);
   }
   async function recargar(){
-    const [c, p] = await Promise.all([
+    const [c, p, h] = await Promise.all([
       sb.from('centros').select('*').order('nombre'),
-      sb.from('pacientes').select('*').order('fecha', { ascending: false }).limit(10000)
+      sb.from('pacientes').select('*').order('fecha', { ascending: false }).limit(10000),
+      sb.from('hospitales').select('*').order('nombre')
     ]);
-    centros = c.data || []; pacientes = p.data || [];
+    centros = c.data || []; pacientes = p.data || []; hospitales = h.data || [];
     if (esAdmin()) {
       const [u, i, a, sd] = await Promise.all([sb.from('perfiles').select('*').order('creado'), sb.from('invitaciones').select('*').order('creado', { ascending: false }), sb.from('ajustes').select('*').eq('clave', 'registro_cerrado').maybeSingle(), sb.from('sedes').select('*').order('nombre')]);
       perfiles = u.data || []; invitaciones = i.data || []; registroCerrado = !a.data || a.data.valor === 'true'; sedes = sd.data || [];
@@ -500,6 +508,7 @@
     keep($('#resumen-centro'), opts, '<option value="">Todos los centros (México)</option>');
     keep($('#panel-centro'), opts, '<option value="">Todos los centros (México)</option>');
     keep($('#centro-admin'), opts, '');
+    renderHosp();
     llenarAnios($('#filtro-anio'), true); llenarAnios($('#resumen-anio'), true); llenarAnios($('#panel-anio'), true);
     panelCache = { key: null, rows: [] };
     renderRegistros(); if (tabActual === 'resumen') renderResumen(); if (tabActual === 'panel') renderPanel();
@@ -520,7 +529,7 @@
     const fd = new FormData(f);
     const doc = {
       centro_id: esAdmin() ? $('#centro-admin').value : perfil.centro_id,
-      fecha: fd.get('fecha'), folio: String(fd.get('folio')||'').trim() || null,
+      fecha: fd.get('fecha'), folio: String(fd.get('folio')||'').trim() || null, hospital_id: fd.get('hospital') || null,
       sexo: fd.get('sexo'), edad: Number(fd.get('edad')), imc: Number(fd.get('imc')),
       peso: fd.get('peso') ? Number(fd.get('peso')) : null, talla: fd.get('talla') ? Number(fd.get('talla')) : null,
       ...Object.fromEntries(COMORB.map(([k]) => [k, !!fd.get(k)])),
@@ -537,7 +546,9 @@
     $('#guardar').disabled = false;
     if (error) { setStatus($('#st-form'), 'No se guardó: ' + error.message, 'err'); return; }
     const fecha = doc.fecha, centroSel = $('#centro-admin').value;
+    const hospSel = doc.hospital_id;
     resetSilencioso = true; f.reset(); $('#fecha').value = fecha; $('#ab-lap').checked = true; $('#centro-admin').value = centroSel;
+    renderHosp(hospSel);
     salirEdicion(); setStatus($('#st-form'), id ? 'Cambios guardados.' : 'Paciente guardado. Listo para el siguiente.', 'ok');
     $('#edad').focus(); await recargar();
   });
@@ -547,7 +558,7 @@
   $('#cancelar-edit').addEventListener('click', () => { $('#form').reset(); salirEdicion(); });
   function editar(p){
     $('#pac-id').value = p.id; $('#banner-edit').hidden = false; $('#guardar').textContent = 'Guardar cambios';
-    $('#centro-admin').value = p.centro_id; $('#fecha').value = p.fecha; $('#folio').value = p.folio || '';
+    $('#centro-admin').value = p.centro_id; $('#fecha').value = p.fecha; $('#folio').value = p.folio || ''; renderHosp(p.hospital_id);
     (p.sexo === 'M' ? $('#sexo-m') : $('#sexo-h')).checked = true; $('#edad').value = p.edad; $('#peso').value = p.peso ?? ''; $('#talla').value = p.talla ?? ''; $('#imc').value = p.imc; $('#imc-hint').hidden = !(p.peso && p.talla); revisar();
     COMORB.forEach(([k]) => { $('#'+k).checked = !!p[k]; });
     (p.origen === 'internacional' ? $('#origen-int') : $('#origen-nac')).checked = true;
@@ -559,6 +570,36 @@
     irA('captura'); window.scrollTo({ top: 0 });
   }
 
+  // ---------- hospitales del centro ----------
+  const centroCaptura = () => esAdmin() ? $('#centro-admin').value : (perfil && perfil.centro_id);
+  const hospDe = c => hospitales.filter(h => h.centro_id === c && h.activo !== false);
+  const hospNombre = id => { const h = hospitales.find(x => x.id === id); return h ? h.nombre : ''; };
+  function renderHosp(sel){
+    const c = centroCaptura(), hs = hospDe(c);
+    const actual = sel !== undefined ? sel : ($('input[name=hospital]:checked') || {}).value;
+    const elegido = hs.some(h => h.id === actual) ? actual : (hs.length === 1 ? hs[0].id : null);
+    $('#seg-hosp').innerHTML = hs.map(h => `<label><input type="radio" name="hospital" value="${h.id}" ${hs.length ? 'required' : ''} ${h.id === elegido ? 'checked' : ''}>${esc(h.nombre)}</label>`).join('');
+    $('#hosp-hint').textContent = hs.length ? (hs.length === 1 ? 'Si también operas en otro hospital, agrégalo aquí.' : 'Toca el hospital donde se operó este paciente.') : 'Agrega el hospital o clínica donde operas; se guarda con cada paciente.';
+  }
+  $('#centro-admin').addEventListener('change', () => renderHosp());
+  $('#hosp-open').addEventListener('click', () => { $('#hosp-add').hidden = false; $('#hosp-open').hidden = true; $('#hosp-nombre').focus(); });
+  $('#hosp-cancel').addEventListener('click', () => { $('#hosp-add').hidden = true; $('#hosp-open').hidden = false; $('#hosp-nombre').value = ''; });
+  $('#hosp-nombre').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); $('#hosp-save').click(); } });
+  $('#hosp-save').addEventListener('click', async () => {
+    const nombre = $('#hosp-nombre').value.trim().replace(/\s+/g, ' '), c = centroCaptura();
+    if (!nombre) { $('#hosp-nombre').focus(); return; }
+    if (!c) { setStatus($('#st-form'), 'Elige el centro primero.', 'err'); return; }
+    const ya = hospDe(c).find(h => h.nombre.toLowerCase() === nombre.toLowerCase());
+    let id = ya && ya.id;
+    if (!id) {
+      const { data, error } = await sb.from('hospitales').insert({ centro_id: c, nombre }).select();
+      if (error) { setStatus($('#st-form'), 'No se pudo agregar: ' + error.message, 'err'); return; }
+      id = data && data[0] && data[0].id;
+      const h = await sb.from('hospitales').select('*').order('nombre'); hospitales = h.data || [];
+    }
+    $('#hosp-cancel').click(); renderHosp(id); setStatus($('#st-form'), '');
+  });
+
   // ---------- registros ----------
   function filtrados(selCentro, selAnio){
     const c = selCentro ? selCentro.value : '', a = selAnio ? selAnio.value : '';
@@ -568,12 +609,15 @@
     const rows = filtrados($('#filtro-centro'), $('#filtro-anio'));
     $('#count-registros').textContent = rows.length + ' paciente' + (rows.length === 1 ? '' : 's');
     $('#empty-registros').hidden = rows.length > 0;
+    const sinHosp = rows.filter(r => !r.hospital_id && hospDe(r.centro_id).length > 0).length;
+    $('#aviso-hosp').hidden = !sinHosp;
+    $('#aviso-hosp').textContent = sinHosp ? `${sinHosp} paciente${sinHosp === 1 ? '' : 's'} sin hospital asignado. Toca cada renglón marcado, elige el hospital y guarda; hace falta para la constancia anual.` : '';
     $('#tbody-registros').innerHTML = rows.map(r => {
       const com = COMORB.filter(([k]) => r[k]).map(([,,ab]) => ab).concat(r.glp1 ? ['GLP-1'] : []).join(', ') || '—';
       const perfilP = (r.origen === 'internacional' ? 'Intl' : 'Nac') + ' · ' + (r.sector === 'publico' ? 'Púb' : 'Priv');
       const ev = [r.reop&&'<span class="pill rev">Reop/readm</span>', r.muerte&&'<span class="pill muerte">Muerte</span>'].filter(Boolean).join(' ') || '—';
       const del = pendingDelete === r.id ? `<button class="rowbtn confirm" data-del="${r.id}" data-confirm="1">Confirmar borrar</button>` : `<button class="rowbtn" data-del="${r.id}">Borrar</button>`;
-      return `<tr class="click" data-edit="${r.id}"><td>${esc(r.fecha)}</td><td ${esAdmin()?'':'hidden'}>${esc(centroNombre(r.centro_id))}</td><td>${esc(r.folio||'—')}</td><td>${r.sexo==='M'?'Mujer':'Hombre'}</td>
+      return `<tr class="click" data-edit="${r.id}"><td>${esc(r.fecha)}</td><td ${esAdmin()?'':'hidden'}>${esc(centroNombre(r.centro_id))}</td><td>${r.hospital_id ? esc(hospNombre(r.hospital_id)) : (hospDe(r.centro_id).length ? '<span class="pill rev">Sin hospital</span>' : '—')}</td><td>${esc(r.folio||'—')}</td><td>${r.sexo==='M'?'Mujer':'Hombre'}</td>
         <td class="num">${r.edad}</td><td class="num">${Number(r.imc).toFixed(1)}</td><td>${perfilP}</td><td><span class="pill${r.tipo==='revisional'?' rev':''}">${L.tipo[r.tipo]}</span></td>
         <td>${L.proc[r.proc]}</td><td>${L.abordaje[r.abordaje]}</td><td>${com}</td><td class="num">${r.estancia}</td><td>${ev}</td><td>${del}</td></tr>`;
     }).join('');
@@ -899,8 +943,8 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     const rs = pacientes.filter(p => !anio || p.fecha.startsWith(anio));
     const cols = centros.map(c => columnaIFSO(c.nombre, rs.filter(p => p.centro_id === c.id))).concat([columnaIFSO('TOTAL MÉXICO', rs)]);
     const hoja1 = FILAS_IFSO.map((f, i) => [f].concat(cols.map(c => c[i] == null ? '' : c[i])));
-    const base = [['centro','fecha','folio','sexo','edad','peso_kg','talla_cm','imc','origen','sector','glp1_previo',...COMORB.map(([k]) => k),'tipo','procedimiento','abordaje','estancia_dias','reop_readmision','muerte','notas']]
-      .concat(rs.map(p => [centroNombre(p.centro_id), p.fecha, p.folio||'', p.sexo, p.edad, p.peso ?? '', p.talla ?? '', Number(p.imc), p.origen||'nacional', p.sector||'', p.glp1?1:0, ...COMORB.map(([k]) => p[k]?1:0), p.tipo, L.proc[p.proc] || p.proc, p.abordaje, p.estancia, p.reop?1:0, p.muerte?1:0, p.notas||'']));
+    const base = [['centro','hospital','fecha','folio','sexo','edad','peso_kg','talla_cm','imc','origen','sector','glp1_previo',...COMORB.map(([k]) => k),'tipo','procedimiento','abordaje','estancia_dias','reop_readmision','muerte','notas']]
+      .concat(rs.map(p => [centroNombre(p.centro_id), hospNombre(p.hospital_id), p.fecha, p.folio||'', p.sexo, p.edad, p.peso ?? '', p.talla ?? '', Number(p.imc), p.origen||'nacional', p.sector||'', p.glp1?1:0, ...COMORB.map(([k]) => p[k]?1:0), p.tipo, L.proc[p.proc] || p.proc, p.abordaje, p.estancia, p.reop?1:0, p.muerte?1:0, p.notas||'']));
     const wb = XLSX.utils.book_new();
     const ws1 = XLSX.utils.aoa_to_sheet(hoja1); ws1['!cols'] = [{wch:28}].concat(cols.map(() => ({wch:22})));
     XLSX.utils.book_append_sheet(wb, ws1, 'Hoja1');
