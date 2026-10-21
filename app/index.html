@@ -404,8 +404,13 @@
   $('#form-login').addEventListener('submit', async ev => {
     ev.preventDefault(); setStatus($('#st-login'), 'Entrando…');
     const { error } = await sb.auth.signInWithPassword({ email: $('#li-email').value.trim(), password: $('#li-pass').value });
-    if (error) setStatus($('#st-login'), error.message.includes('Invalid') ? 'Correo o contraseña incorrectos.' : error.message.includes('confirm') ? 'Confirma tu correo primero (revisa tu bandeja).' : 'No se pudo entrar: ' + error.message, 'err');
-    else setStatus($('#st-login'), '');
+    if (!error) { setStatus($('#st-login'), ''); return; }
+    if (error.message.includes('Invalid')) {
+      const sc = await sb.rpc('sin_cuenta', { p_email: $('#li-email').value.trim() });
+      if (sc.data === true) { setStatus($('#st-login'), 'Este correo está invitado pero todavía no tiene cuenta. Toca "Crear cuenta nueva" y regístrate con este mismo correo.', 'err'); return; }
+      setStatus($('#st-login'), 'Correo o contraseña incorrectos. Si ya tienes cuenta y no la recuerdas, usa "Olvidé mi contraseña".', 'err'); return;
+    }
+    setStatus($('#st-login'), error.message.includes('confirm') ? 'Confirma tu correo primero (revisa tu bandeja).' : 'No se pudo entrar: ' + error.message, 'err');
   });
   $('#form-registro').addEventListener('submit', async ev => {
     ev.preventDefault();
