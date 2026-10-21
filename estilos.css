@@ -127,3 +127,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .kpi.g b{color:var(--violet)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:no-preference){ .btn,nav button{transition:background .15s,color .15s} }
+
+.hosp-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.hosp-add input{flex:1 1 200px}
+#seg-hosp:empty{display:none}
