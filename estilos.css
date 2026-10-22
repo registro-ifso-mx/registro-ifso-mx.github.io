@@ -131,3 +131,15 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .hosp-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .hosp-add input{flex:1 1 200px}
 #seg-hosp:empty{display:none}
+.hosp-res{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
+.hosp-item{text-align:left;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface);color:var(--fg);cursor:pointer;font:inherit;line-height:1.3}
+.hosp-item:hover{border-color:var(--violet)}
+.hosp-manual{width:100%;margin-top:8px}
+.seg label small{font-weight:400;opacity:.75;margin-left:4px}
+.meses{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+@media (max-width:480px){ .meses{grid-template-columns:repeat(4,1fr)} }
+.meses span{display:flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:8px;padding:4px 2px;font-variant-numeric:tabular-nums}
+.meses small{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.meses b{font-weight:600;color:var(--navy)} @media (prefers-color-scheme: dark){ .meses b{color:var(--fg)} }
+.const-h summary::-webkit-details-marker{color:var(--muted)}
+.const-form .field>label{white-space:normal;line-height:1.25}
