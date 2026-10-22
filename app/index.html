@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="../config.js"></script>
+<script src="../config.js?v=20"></script>
 <script src="../graficas.js"></script>
 <script src="../constancias_pdf.js"></script>
 <link rel="stylesheet" href="../estilos.css">
@@ -1329,11 +1329,13 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
   }
   // --- notificaciones push (una al mes) ---
   const b64aBytes = s => { const b = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+  let pushDetalle = '';
   const esIOSNoInstalada = () => /iPhone|iPad/.test(navigator.userAgent) && !window.navigator.standalone;
   async function pushEstado(){
-    if (!CFG.VAPID_PUBLIC || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return esIOSNoInstalada() ? 'instalar' : 'nosoporta';
+    const falta = [!CFG.VAPID_PUBLIC && 'cfg', !('serviceWorker' in navigator) && 'sw', !('PushManager' in window) && 'push', !('Notification' in window) && 'notif'].filter(Boolean);
+    if (falta.length) { pushDetalle = falta.join(','); return esIOSNoInstalada() ? 'instalar' : 'nosoporta'; }
     if (Notification.permission === 'denied') return 'denegado';
-    try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return sub ? 'activo' : 'inactivo'; } catch (e) { return 'nosoporta'; }
+    try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return sub ? 'activo' : 'inactivo'; } catch (e) { pushDetalle = 'sub:' + (e && e.message || e); return 'nosoporta'; }
   }
   async function pushActivar(){
     const perm = await Notification.requestPermission(); if (perm !== 'granted') return 'denegado';
@@ -1357,7 +1359,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
       inactivo: '¿Quieres que la app te avise <b>una vez al mes</b> cuántos controles tienes? Solo un aviso, sin correos ni datos de pacientes. <button class="btn link" type="button" data-push="on">Activar avisos en este celular</button>',
       denegado: 'Los avisos están bloqueados en este dispositivo. Para activarlos, permite las notificaciones de registrobariatrico.com en los ajustes del navegador o del teléfono.',
       instalar: 'Para recibir avisos en iPhone, primero instala la app en tu pantalla de inicio (botón Compartir → "Agregar a pantalla de inicio") y ábrela desde ahí.',
-      nosoporta: 'Este navegador no permite avisos; los controles pendientes siempre aparecen aquí al entrar.'
+      nosoporta: 'Este navegador no permite avisos; los controles pendientes siempre aparecen aquí al entrar. <small style="opacity:.7">(' + esc(pushDetalle) + ')</small>'
     };
     el.innerHTML = T[st];
   }
