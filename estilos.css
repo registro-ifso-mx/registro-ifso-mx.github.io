@@ -158,3 +158,8 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .push-card.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))} .push-card.ok .push-ico{color:var(--ok)}
 .push-card.cta{border-color:var(--primary);background:var(--accent-soft)} .push-card.cta .push-ico{color:var(--primary)}
 .push-card.warn{border-color:var(--warn);background:var(--warn-soft)} .push-card.warn .push-ico{color:var(--warn)}
+.seg-off-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding:16px;border:1px dashed var(--line);border-radius:14px;background:var(--surface)}
+.seg-off-card>div{flex:1 1 16rem}
+.seg-off-card .seg-off-t{font-weight:700;margin-bottom:4px}
+.seg-off-card .btn{flex:0 0 auto}
+@media (max-width:560px){.seg-off-card .btn{flex:1 1 100%}}
