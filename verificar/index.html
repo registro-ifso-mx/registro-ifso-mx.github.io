@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verificar constancia · Registro Bariátrico México</title>
+<meta name="theme-color" content="#061551">
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="../config.js"></script>
+<link rel="stylesheet" href="../estilos.css">
+<style>
+  .ver{max-width:560px;margin:32px auto 0}
+  .ver h1{font-size:1.3rem;margin-bottom:4px}
+  .res{margin-top:16px}
+  .ok-big{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--ok);font-size:1.05rem}
+  .bad-big{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--danger);font-size:1.05rem}
+  .ok-big i,.bad-big i{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-style:normal;flex:none}
+  .ok-big i{background:var(--ok)} .bad-big i{background:var(--danger)}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 0;font-size:.95rem}
+  dt{color:var(--muted)} dd{margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="ver">
+  <h1>Verificar constancia</h1>
+  <p class="org">Registro Bariátrico México · Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.</p>
+  <div class="card">
+    <form id="f" novalidate>
+      <div class="field"><label for="folio">Folio de la constancia</label><input id="folio" placeholder="RBM-2026-0001" autocapitalize="characters" autocomplete="off" style="font-family:var(--mono);letter-spacing:.08em"></div>
+      <div class="actions"><button class="btn primary" type="submit">Verificar</button></div>
+    </form>
+    <div class="res" id="res"></div>
+    <p class="status" id="st"></p>
+  </div>
+  <p class="hint" style="margin-top:14px">Esta página confirma únicamente que el folio fue emitido por el Registro Bariátrico México y los datos que la propia constancia muestra. No contiene información de pacientes. Dudas: contacto@registrobariatrico.com</p>
+</div>
+</div>
+<script>
+(function(){
+  const $ = s => document.querySelector(s), CFG = window.IFSO_CONFIG || {};
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+  const q = new URLSearchParams(location.search).get('f') || (location.pathname.match(/RBM-\d{4}-\d{4}/i) || [''])[0];
+  if (q) { $('#folio').value = q.toUpperCase(); verificar(); }
+  $('#f').addEventListener('submit', ev => { ev.preventDefault(); verificar(); });
+  async function verificar(){
+    const folio = $('#folio').value.trim().toUpperCase(); $('#res').innerHTML = '';
+    if (!/^RBM-\d{4}-\d{4}$/.test(folio)) { $('#st').textContent = 'Escribe el folio como aparece en la constancia (RBM-año-número).'; $('#st').className = 'status err'; return; }
+    $('#st').textContent = 'Consultando…'; $('#st').className = 'status';
+    const { data, error } = await sb.rpc('verificar_constancia', { p_folio: folio });
+    $('#st').textContent = '';
+    if (error) { $('#st').textContent = 'No se pudo consultar: ' + error.message; $('#st').className = 'status err'; return; }
+    if (!data || !data.valida) {
+      $('#res').innerHTML = `<div class="bad-big"><i>✕</i>${data && data.estado === 'cancelada' ? 'Esta constancia fue cancelada.' : 'No existe ninguna constancia con el folio ' + esc(folio) + '.'}</div>`; return;
+    }
+    const hs = (data.hospitales || []).map(h => `${esc(h.hospital)} (${esc(h.sector || '—')}): ${esc(h.cirugias)}`).join('<br>');
+    $('#res').innerHTML = `<div class="ok-big"><i>✓</i>Constancia válida, emitida por el Registro Bariátrico México.</div>
+      <dl><dt>Folio</dt><dd><span class="code">${esc(data.folio)}</span></dd>
+      <dt>Socio</dt><dd>${esc(data.socio)}</dd>
+      <dt>Año</dt><dd>${esc(data.anio)}</dd>
+      <dt>Hospitales</dt><dd>${hs || '—'}</dd>
+      <dt>Total verificado</dt><dd><b>${esc(data.total)}</b> procedimientos</dd>
+      <dt>Auditoría</dt><dd>${esc(data.auditoria || (data.muestreado ? 'seleccionado en el muestreo aleatorio' : 'no seleccionado en el muestreo aleatorio'))}</dd>
+      <dt>Emitida</dt><dd>${esc(data.emitida)}</dd></dl>`;
+  }
+})();
+</script>
+</body>
+</html>
