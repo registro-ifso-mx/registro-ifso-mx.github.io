@@ -148,3 +148,13 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .seg-item.atrasado{border-color:var(--danger)}
 .seg-item-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
 .seg-item-h .hint{margin-left:auto}
+
+.push-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;border-radius:14px;padding:18px 16px;margin-bottom:16px;border:1px solid var(--line);background:var(--surface)}
+.push-card .push-ico{width:34px;height:34px;margin-bottom:2px}
+.push-card .push-t{font-weight:700;font-size:1.02rem}
+.push-card .push-d{font-size:.9rem;color:var(--muted);max-width:40rem;line-height:1.45}
+.push-card .push-b{margin-top:8px;width:100%;max-width:22rem}
+.push-card .push-b .btn{width:100%}
+.push-card.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))} .push-card.ok .push-ico{color:var(--ok)}
+.push-card.cta{border-color:var(--primary);background:var(--accent-soft)} .push-card.cta .push-ico{color:var(--primary)}
+.push-card.warn{border-color:var(--warn);background:var(--warn-soft)} .push-card.warn .push-ico{color:var(--warn)}
