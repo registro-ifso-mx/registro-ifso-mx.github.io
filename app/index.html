@@ -283,6 +283,59 @@
   <input type="file" id="const-file" accept="application/pdf,image/jpeg,image/png" hidden>
 </section>
 
+<!-- SEGUIMIENTO (opcional) -->
+<section id="sec-seguimiento" hidden>
+  <div class="card" id="seg-off">
+    <h2>Seguimiento de tus pacientes (opcional)</h2>
+    <p class="hint" style="margin:0 0 10px">El registro no cambia: sigues capturando cada cirugía igual. Si activas el seguimiento, la app te lleva la cuenta de los controles a <b>1, 3, 6, 12, 18 y 24 meses</b> de cada paciente y en cada uno capturas en 30 segundos: peso (el IMC y la pérdida de peso se calculan solos), cómo van sus comorbilidades, si hubo alguna complicación y si usa GLP-1. Opcionalmente, % de grasa y masa muscular del InBody.</p>
+    <p class="hint" style="margin:0 0 12px">Una vez al mes puedes recibir <b>un aviso en el celular</b> con cuántos controles te tocan; nunca lleva datos de pacientes y no se manda ningún correo.</p>
+    <div class="actions"><button class="btn primary" type="button" id="seg-activar">Activar seguimiento</button></div>
+  </div>
+  <div id="seg-on" hidden>
+    <div class="banner" id="seg-push" hidden></div>
+    <div class="toolbar" style="margin-bottom:8px"><select id="seg-centro" hidden><option value="">Todos los centros</option></select><span class="count" id="seg-count"></span></div>
+    <div class="kpis" id="seg-kpis"></div>
+    <h2 style="margin:4px 0 6px">Controles que tocan</h2>
+    <p class="hint" style="margin:0 0 10px">Cada control tiene una ventana de un mes antes y uno después de la fecha ideal, para que coincida con la consulta real. Toca <b>Capturar</b> cuando veas al paciente o <b>No acudió</b> si no hubo contacto.</p>
+    <div class="seg-lista" id="tbody-seg"></div>
+    <div class="empty" id="empty-seg">No hay controles pendientes este mes.</div>
+    <div class="card" id="seg-form-card" hidden style="margin-top:14px">
+      <h2 id="seg-form-t">Control</h2>
+      <form id="form-seg" novalidate>
+        <input type="hidden" id="sg-pac"><input type="hidden" id="sg-meses">
+        <div class="grid">
+          <div class="field"><label for="sg-fecha">Fecha de la consulta</label><input id="sg-fecha" type="date" required></div>
+          <div class="field"><label for="sg-peso">Peso actual (kg)</label><input id="sg-peso" type="number" inputmode="decimal" step="0.1" min="20" max="400"></div>
+          <div class="field"><label for="sg-imc">IMC actual</label><input id="sg-imc" type="number" inputmode="decimal" step="0.1" min="10" max="120"><span class="hint" id="sg-imc-hint" hidden>Calculado con la talla inicial</span></div>
+          <div class="field"><label for="sg-grasa">% grasa <span class="hint-inline">InBody, opcional</span></label><input id="sg-grasa" type="number" inputmode="decimal" step="0.1" min="1" max="80"></div>
+          <div class="field"><label for="sg-musculo">Masa muscular (kg) <span class="hint-inline">InBody, opcional</span></label><input id="sg-musculo" type="number" inputmode="decimal" step="0.1" min="5" max="150"></div>
+        </div>
+        <p class="status" id="sg-calc" style="margin:8px 0 0"></p>
+        <fieldset style="margin-top:14px" id="sg-comorb-fs"><legend>Comorbilidades que tenía al inicio: ¿cómo van?</legend><div id="sg-comorb"></div></fieldset>
+        <fieldset><legend>Eventos desde el último control</legend>
+          <div class="seg"><label><input type="checkbox" id="sg-compl">Complicación tardía</label><label><input type="checkbox" id="sg-reop">Reoperación</label></div>
+          <div class="field wide" id="sg-compl-wrap" hidden style="margin-top:8px"><label for="sg-compl-tipo">¿Cuál?</label><input id="sg-compl-tipo" maxlength="120" placeholder="Estenosis, hernia interna, colelitiasis…"></div>
+        </fieldset>
+        <fieldset><legend>¿Usa GLP-1 actualmente?</legend>
+          <div class="seg"><label><input type="radio" name="sg-glp1" value="si">Sí</label><label><input type="radio" name="sg-glp1" value="no">No</label></div></fieldset>
+        <div class="field wide"><label for="sg-notas">Notas (opcional)</label><input id="sg-notas" maxlength="200"></div>
+        <div class="actions" style="margin-top:10px"><button class="btn primary" type="submit">Guardar control</button><button class="btn" type="button" id="sg-cancel">Cancelar</button></div>
+        <p class="status" id="st-seg"></p>
+      </form>
+    </div>
+    <h2 style="margin:18px 0 6px">Resultados</h2>
+    <p class="hint" style="margin:0 0 10px">Solo de los pacientes con control capturado (no es una tasa de todos los operados). Pérdida de peso como mediana. %PPT = pérdida de peso total; %PEP = pérdida del exceso de peso (meta IMC 25).</p>
+    <div class="tablewrap"><table><thead><tr><th>Control</th><th class="num">Con datos</th><th class="num">No acudió</th><th class="num">%PPT</th><th class="num">%PEP</th><th class="num">IMC</th><th class="num">DM2 en remisión</th><th class="num">HAS en remisión</th><th class="num">Complicación</th><th class="num">GLP-1</th></tr></thead><tbody id="tbody-seg-res"></tbody></table></div>
+    <h2 style="margin:18px 0 6px">Últimos controles capturados</h2>
+    <div class="tablewrap">
+      <table><thead><tr><th>Paciente</th><th>Control</th><th>Fecha</th><th class="num">Peso</th><th class="num">IMC</th><th class="num">%PPT</th><th>Comorbilidades</th><th>Eventos</th><th></th></tr></thead><tbody id="tbody-seg-hist"></tbody></table>
+      <div class="empty" id="empty-seg-hist">Todavía no has capturado controles.</div>
+    </div>
+    <p class="hint" style="margin-top:14px" id="seg-desactivar-wrap"><button class="btn link" type="button" id="seg-desactivar">Desactivar el seguimiento</button> (los controles capturados se conservan).</p>
+    <p class="status" id="st-seg2"></p>
+  </div>
+</section>
+
 <!-- ADMIN: CENTROS -->
 <section id="sec-centros" hidden>
   <div class="kpis" id="kpis"></div>
@@ -436,7 +489,7 @@
 
   // ---------- estado ----------
   let recuperando = /type=recovery/.test(location.hash + location.search);
-  let user = null, perfil = null, centros = [], hospitales = [], pacientes = [], perfiles = [], invitaciones = [], sedes = [], cartas = [], constancias = [], ajustes = {}, registroCerrado = true, pendingDelete = null, tabActual = null;
+  let user = null, perfil = null, centros = [], hospitales = [], pacientes = [], perfiles = [], invitaciones = [], sedes = [], cartas = [], constancias = [], seguimientos = [], ajustes = {}, registroCerrado = true, pendingDelete = null, tabActual = null;
   const esAdmin = () => perfil && perfil.rol === 'admin';
   const centroNombre = id => (centros.find(c => c.id === id) || {}).nombre || '—';
 
@@ -518,8 +571,8 @@
   });
 
   // ---------- app ----------
-  const TABS_CENTRO = [['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['constancia','Constancia']];
-  const TABS_ADMIN = [['centros','Centros'],['usuarios','Usuarios'],['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['constancias','Constancias'],['exportar','Excel IFSO']];
+  const TABS_CENTRO = [['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['constancia','Constancia'],['seguimiento','Seguimiento']];
+  const TABS_ADMIN = [['centros','Centros'],['usuarios','Usuarios'],['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['constancias','Constancias'],['seguimiento','Seguimiento'],['exportar','Excel IFSO']];
   async function entrarApp(){
     mostrar('app');
     $('#who-nombre').textContent = perfil.nombre || user.email;
@@ -532,27 +585,29 @@
     await recargar();
     $('#who-centro').textContent = esAdmin() || centroNombre(perfil.centro_id) === (perfil.nombre || '') ? '' : '· ' + centroNombre(perfil.centro_id);
     let t = null; try { t = localStorage.getItem('ifso.tab'); } catch(e){}
+    const hashTab = (location.hash || '').slice(1); if (hashTab === 'seguimiento') { t = 'seguimiento'; history.replaceState(null, '', location.pathname); }
     irA(tabs.some(x => x[0] === t) ? t : (esAdmin() ? 'centros' : 'captura'));
   }
   function irA(tab){
     tabActual = tab;
     document.querySelectorAll('#tabs [role=tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false'));
-    ['captura','registros','panel','resumen','constancia','centros','usuarios','constancias','exportar'].forEach(s => $('#sec-'+s).hidden = s !== tab);
+    ['captura','registros','panel','resumen','constancia','seguimiento','centros','usuarios','constancias','exportar'].forEach(s => $('#sec-'+s).hidden = s !== tab);
     try { localStorage.setItem('ifso.tab', tab); } catch(e){}
     if (tab === 'resumen') renderResumen();
     if (tab === 'panel') renderPanel();
     if (tab === 'exportar') llenarAnios($('#ex-anio'), false);
     if (tab === 'constancia') renderConstancia();
     if (tab === 'constancias') renderConstancias();
+    if (tab === 'seguimiento') renderSeguimiento();
   }
   async function recargar(){
-    const [c, p, h, ca, co] = await Promise.all([
+    const [c, p, h, ca, co, sg] = await Promise.all([
       sb.from('centros').select('*').order('nombre'),
       sb.from('pacientes').select('*').order('fecha', { ascending: false }).limit(10000),
       sb.from('hospitales').select('*').order('nombre'),
-      sb.from('cartas').select('*'), sb.from('constancias').select('*')
+      sb.from('cartas').select('*'), sb.from('constancias').select('*'), sb.from('seguimientos').select('*').order('creado', { ascending: false })
     ]);
-    centros = c.data || []; pacientes = p.data || []; hospitales = h.data || []; cartas = ca.data || []; constancias = co.data || [];
+    centros = c.data || []; pacientes = p.data || []; hospitales = h.data || []; cartas = ca.data || []; constancias = co.data || []; seguimientos = sg.data || [];
     if (esAdmin()) {
       const [u, i, a, sd] = await Promise.all([sb.from('perfiles').select('*').order('creado'), sb.from('invitaciones').select('*').order('creado', { ascending: false }), sb.from('ajustes').select('*'), sb.from('sedes').select('*').order('nombre')]);
       perfiles = u.data || []; invitaciones = i.data || []; sedes = sd.data || [];
@@ -573,6 +628,7 @@
     renderRegistros(); if (tabActual === 'resumen') renderResumen(); if (tabActual === 'panel') renderPanel();
     if (esAdmin()) { renderCentros(); renderUsuarios(); renderSedes(); if (tabActual === 'constancias') renderConstancias(); }
     else { avisoConstancia(); if (tabActual === 'constancia') renderConstancia(); }
+    if (tabActual === 'seguimiento') renderSeguimiento();
   }
   function anios(){ const s = new Set(pacientes.map(p => p.fecha.slice(0,4))); s.add(String(new Date().getFullYear())); return [...s].sort().reverse(); }
   function llenarAnios(sel, conTodos){
@@ -1241,6 +1297,171 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     const as = ev.target.closest('[data-csaudsave]');
     if (as) { const k = constDe(as.dataset.csaudsave, anio); const { error } = await sb.from('constancias').update({ auditoria: $(`[data-csaud="${as.dataset.csaudsave}"]`).value.trim() || null }).eq('id', k.id);
       setStatus(st, error ? 'No se pudo guardar: ' + error.message : 'Resultado de auditoría guardado; aparecerá en la constancia.', error ? 'err' : 'ok'); await recargar(); return; }
+  });
+
+  // ---------- seguimiento (opcional) ----------
+  const HITOS = [1, 3, 6, 12, 18, 24];
+  const ESTADOS_COMORB = [['remision', 'En remisión'], ['mejoria', 'Mejoró'], ['igual', 'Igual'], ['peor', 'Empeoró']];
+  const addMeses = (iso, m) => { const d = new Date(iso + 'T12:00:00'); d.setMonth(d.getMonth() + m); return d; };
+  const fISO = d => d.toISOString().slice(0, 10);
+  const fCorta = d => d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' });
+  const mediana = a => { const v = a.filter(x => x != null && !isNaN(x)).sort((x, y) => x - y); if (!v.length) return null; const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+  const segDe = (pid, m) => seguimientos.find(s => s.paciente_id === pid && s.meses === m);
+  const pesoIdeal = p => p.talla ? 25 * Math.pow(p.talla / 100, 2) : null;
+  const calcPPT = (p, peso) => p.peso && peso ? (p.peso - peso) / p.peso * 100 : null;
+  const calcPEP = (p, peso) => { const pi = pesoIdeal(p); return p.peso && peso && pi && p.peso > pi ? (p.peso - peso) / (p.peso - pi) * 100 : null; };
+  const centroSeg = () => esAdmin() ? ($('#seg-centro').value || null) : perfil.centro_id;
+  const segActivo = () => esAdmin() || !!(centros.find(c => c.id === perfil.centro_id) || {}).seguimiento;
+  const pacLabel = p => `${esc(p.folio || 'sin folio')} <span class="hint">· ${p.sexo === 'M' ? 'Mujer' : 'Hombre'} ${p.edad} a · ${L.proc[p.proc] || p.proc}</span>`;
+  function pendientesSeg(centro){
+    const hoy = new Date(); const out = [];
+    pacientes.forEach(p => {
+      if (centro && p.centro_id !== centro) return; if (p.seg_baja) return;
+      if (!esAdmin() || !centro) { const c = centros.find(x => x.id === p.centro_id); if (!c || !c.seguimiento) return; }
+      HITOS.forEach(m => {
+        if (segDe(p.id, m)) return;
+        const ini = addMeses(p.fecha, m - 1), fin = addMeses(p.fecha, m + 1), tope = addMeses(p.fecha, m + 3);
+        if (hoy >= ini && hoy <= fin) out.push({ p, m, ini, fin, estado: 'ahora' });
+        else if (hoy > fin && hoy <= tope) out.push({ p, m, ini, fin, estado: 'atrasado' });
+      });
+    });
+    return out.sort((a, b) => (a.estado === b.estado ? a.fin - b.fin : a.estado === 'atrasado' ? -1 : 1));
+  }
+  // --- notificaciones push (una al mes) ---
+  const b64aBytes = s => { const b = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+  const esIOSNoInstalada = () => /iPhone|iPad/.test(navigator.userAgent) && !window.navigator.standalone;
+  async function pushEstado(){
+    if (!CFG.VAPID_PUBLIC || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return esIOSNoInstalada() ? 'instalar' : 'nosoporta';
+    if (Notification.permission === 'denied') return 'denegado';
+    try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return sub ? 'activo' : 'inactivo'; } catch (e) { return 'nosoporta'; }
+  }
+  async function pushActivar(){
+    const perm = await Notification.requestPermission(); if (perm !== 'granted') return 'denegado';
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64aBytes(CFG.VAPID_PUBLIC) });
+    const j = sub.toJSON();
+    const { error } = await sb.from('push_suscripciones').upsert({ user_id: user.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, dispositivo: navigator.userAgent.slice(0, 80) }, { onConflict: 'endpoint' });
+    if (error) { await sub.unsubscribe(); throw new Error(error.message); }
+    return 'activo';
+  }
+  async function pushDesactivar(){
+    const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
+    if (sub) { await sb.from('push_suscripciones').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+    return 'inactivo';
+  }
+  async function renderPushBanner(){
+    const el = $('#seg-push'); if (esAdmin()) { el.hidden = true; return; }
+    const st = await pushEstado(); el.hidden = false;
+    const T = {
+      activo: 'Avisos en el celular <b>activados</b>: una notificación al mes con cuántos controles te tocan (sin datos de pacientes). <button class="btn link" type="button" data-push="off">Desactivar</button>',
+      inactivo: '¿Quieres que la app te avise <b>una vez al mes</b> cuántos controles tienes? Solo un aviso, sin correos ni datos de pacientes. <button class="btn link" type="button" data-push="on">Activar avisos en este celular</button>',
+      denegado: 'Los avisos están bloqueados en este dispositivo. Para activarlos, permite las notificaciones de registrobariatrico.com en los ajustes del navegador o del teléfono.',
+      instalar: 'Para recibir avisos en iPhone, primero instala la app en tu pantalla de inicio (botón Compartir → "Agregar a pantalla de inicio") y ábrela desde ahí.',
+      nosoporta: 'Este navegador no permite avisos; los controles pendientes siempre aparecen aquí al entrar.'
+    };
+    el.innerHTML = T[st];
+  }
+  $('#seg-push').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-push]'); if (!b) return; b.disabled = true;
+    try { if (b.dataset.push === 'on') await pushActivar(); else await pushDesactivar(); } catch (e) { setStatus($('#st-seg2'), 'No se pudo cambiar el aviso: ' + e.message, 'err'); }
+    await renderPushBanner();
+  });
+  // --- vista ---
+  function renderSeguimiento(){
+    const activo = segActivo();
+    $('#seg-off').hidden = activo; $('#seg-on').hidden = !activo; if (!activo) return;
+    $('#seg-centro').hidden = !esAdmin(); $('#seg-desactivar-wrap').hidden = esAdmin();
+    if (esAdmin()) { const sel = $('#seg-centro'), v = sel.value; sel.innerHTML = '<option value="">Todos los centros con seguimiento</option>' + centros.filter(c => c.seguimiento).map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join(''); sel.value = [...sel.options].some(o => o.value === v) ? v : ''; }
+    renderPushBanner();
+    const centro = centroSeg();
+    const pend = pendientesSeg(centro);
+    const segs = seguimientos.filter(s => !centro || s.centro_id === centro);
+    const enSeg = pacientes.filter(p => (!centro || p.centro_id === centro) && !p.seg_baja && (centros.find(c => c.id === p.centro_id) || {}).seguimiento).length;
+    $('#seg-kpis').innerHTML = [[enSeg, 'pacientes en seguimiento'], [pend.filter(x => x.estado === 'ahora').length, 'controles este mes'], [pend.filter(x => x.estado === 'atrasado').length, 'atrasados'], [segs.filter(s => !s.perdido).length, 'controles capturados']].map(([n, l]) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`).join('');
+    $('#seg-count').textContent = '';
+    $('#empty-seg').hidden = pend.length > 0;
+    $('#tbody-seg').innerHTML = pend.map(x => `<div class="seg-item${x.estado === 'atrasado' ? ' atrasado' : ''}">
+      <div class="seg-item-h"><b>Control de ${x.m} ${x.m === 1 ? 'mes' : 'meses'}</b>${x.estado === 'atrasado' ? ' <span class="pill rev">atrasado</span>' : ''}<span class="hint">ventana ${fCorta(x.ini)} – ${fCorta(x.fin)}</span></div>
+      <div>${pacLabel(x.p)} <span class="hint">· cirugía ${esc(x.p.fecha)}</span>${esAdmin() ? `<br><span class="hint">${esc(centroNombre(x.p.centro_id))}</span>` : ''}</div>
+      ${esAdmin() ? '' : `<div class="actions" style="margin-top:8px"><button class="btn primary" type="button" data-segcap="${x.p.id}" data-m="${x.m}" style="min-height:38px;padding:7px 14px">Capturar</button><button class="btn" type="button" data-segperd="${x.p.id}" data-m="${x.m}" style="min-height:38px;padding:7px 14px">No acudió</button><button class="btn link" type="button" data-segbaja="${x.p.id}" title="Dejar de dar seguimiento a este paciente">Quitar del seguimiento</button></div>`}
+    </div>`).join('');
+    // resultados por hito
+    $('#tbody-seg-res').innerHTML = HITOS.map(m => {
+      const rs = segs.filter(s => s.meses === m), con = rs.filter(s => !s.perdido), per = rs.filter(s => s.perdido);
+      const pac = id => pacientes.find(p => p.id === id) || {};
+      const ppt = mediana(con.map(s => calcPPT(pac(s.paciente_id), s.peso))), pep = mediana(con.map(s => calcPEP(pac(s.paciente_id), s.peso))), imc = mediana(con.map(s => s.imc != null ? Number(s.imc) : null));
+      const rem = k => { const b = con.filter(s => pac(s.paciente_id)[k] && s.comorb && s.comorb[k]); return b.length ? Math.round(b.filter(s => s.comorb[k] === 'remision').length / b.length * 100) + ' % <span class="hint">(' + b.length + ')</span>' : '—'; };
+      const pct = f => con.length ? Math.round(con.filter(f).length / con.length * 100) + ' %' : '—';
+      const n1 = v => v == null ? '—' : v.toFixed(1);
+      return `<tr><td><b>${m} ${m === 1 ? 'mes' : 'meses'}</b></td><td class="num">${con.length}</td><td class="num">${per.length}</td><td class="num">${n1(ppt)}</td><td class="num">${n1(pep)}</td><td class="num">${n1(imc)}</td><td class="num">${rem('dm2')}</td><td class="num">${rem('has')}</td><td class="num">${pct(s => s.complicacion || s.reoperacion)}</td><td class="num">${pct(s => s.glp1 === true)}</td></tr>`;
+    }).join('');
+    // historial
+    const hist = segs.slice(0, 30);
+    $('#empty-seg-hist').hidden = hist.length > 0;
+    $('#tbody-seg-hist').innerHTML = hist.map(s => { const p = pacientes.find(x => x.id === s.paciente_id) || {}; const ppt = calcPPT(p, s.peso);
+      const cm = Object.entries(s.comorb || {}).map(([k, v]) => (COMORB.find(c => c[0] === k) || [k, k, k])[2] + ': ' + (ESTADOS_COMORB.find(e => e[0] === v) || [v, v])[1]).join(', ');
+      const ev = [s.complicacion ? 'Complicación' + (s.complicacion_tipo ? ' (' + esc(s.complicacion_tipo) + ')' : '') : '', s.reoperacion ? 'Reoperación' : '', s.glp1 === true ? 'GLP-1' : ''].filter(Boolean).join(' · ');
+      return `<tr><td style="white-space:normal">${p.id ? pacLabel(p) : '—'}</td><td>${s.meses} m${s.perdido ? ' <span class="pill rev">no acudió</span>' : ''}</td><td>${esc(s.fecha)}</td><td class="num">${s.peso ?? '—'}</td><td class="num">${s.imc ?? '—'}</td><td class="num">${ppt == null ? '—' : ppt.toFixed(1)}</td><td style="white-space:normal" class="hint">${esc(cm) || '—'}</td><td style="white-space:normal" class="hint">${ev || '—'}</td><td>${esAdmin() ? '' : `<button class="rowbtn" data-segdel="${s.id}">Borrar</button>`}</td></tr>`; }).join('');
+  }
+  $('#seg-centro').addEventListener('change', renderSeguimiento);
+  $('#seg-activar').addEventListener('click', async () => {
+    const { error } = await sb.from('centros').update({ seguimiento: true }).eq('id', perfil.centro_id);
+    if (error) { setStatus($('#st-seg2'), 'No se pudo activar: ' + error.message, 'err'); return; }
+    await recargar(); renderSeguimiento();
+  });
+  $('#seg-desactivar').addEventListener('click', async ev => {
+    if (!ev.target.dataset.confirm) { ev.target.dataset.confirm = '1'; ev.target.textContent = 'Confirmar: desactivar el seguimiento'; setTimeout(() => { delete ev.target.dataset.confirm; ev.target.textContent = 'Desactivar el seguimiento'; }, 5000); return; }
+    const { error } = await sb.from('centros').update({ seguimiento: false }).eq('id', perfil.centro_id);
+    if (error) { setStatus($('#st-seg2'), 'No se pudo desactivar: ' + error.message, 'err'); return; }
+    try { await pushDesactivar(); } catch (e) {}
+    await recargar(); renderSeguimiento();
+  });
+  function abrirControl(p, m){
+    $('#sg-pac').value = p.id; $('#sg-meses').value = m; $('#seg-form-t').textContent = `Control de ${m} ${m === 1 ? 'mes' : 'meses'} · ${p.folio || 'sin folio'} · cirugía ${p.fecha}` + (p.peso ? ` · peso inicial ${p.peso} kg` : '') + (p.imc ? ` · IMC inicial ${p.imc}` : '');
+    $('#form-seg').reset(); $('#sg-fecha').value = hoy(); $('#sg-compl-wrap').hidden = true; $('#sg-imc-hint').hidden = true; $('#sg-calc').textContent = '';
+    const base = COMORB.filter(([k]) => p[k]);
+    $('#sg-comorb-fs').hidden = !base.length;
+    $('#sg-comorb').innerHTML = base.map(([k, l]) => `<div class="field wide" style="margin-bottom:8px"><label>${esc(l)}</label><div class="seg">${ESTADOS_COMORB.map(([v, t]) => `<label><input type="radio" name="sgc-${k}" value="${v}">${t}</label>`).join('')}</div></div>`).join('');
+    $('#seg-form-card').hidden = false; $('#seg-form-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('#sg-peso').focus(), 300);
+  }
+  const sgPac = () => pacientes.find(x => x.id === $('#sg-pac').value) || {};
+  $('#sg-peso').addEventListener('input', () => { const p = sgPac(), w = Number($('#sg-peso').value);
+    if (p.talla && w > 0) { $('#sg-imc').value = (w / Math.pow(p.talla / 100, 2)).toFixed(1); $('#sg-imc-hint').hidden = false; }
+    const ppt = calcPPT(p, w), pep = calcPEP(p, w);
+    $('#sg-calc').textContent = w > 0 && p.peso ? `Pérdida: ${(p.peso - w).toFixed(1)} kg · %PPT ${ppt.toFixed(1)} %` + (pep != null ? ` · %PEP ${pep.toFixed(0)} %` : '') : (w > 0 && !p.peso ? 'Sin peso inicial registrado: no se puede calcular la pérdida (edítalo en Registros).' : ''); });
+  $('#sg-compl').addEventListener('change', () => { $('#sg-compl-wrap').hidden = !$('#sg-compl').checked; });
+  $('#sg-cancel').addEventListener('click', () => { $('#seg-form-card').hidden = true; });
+  $('#form-seg').addEventListener('submit', async ev => {
+    ev.preventDefault(); const p = sgPac(), m = Number($('#sg-meses').value), st = $('#st-seg');
+    if (!$('#sg-fecha').value) { setStatus(st, 'Pon la fecha de la consulta.', 'err'); return; }
+    const peso = $('#sg-peso').value ? Number($('#sg-peso').value) : null, imc = $('#sg-imc').value ? Number($('#sg-imc').value) : null;
+    if (!peso && !imc) { setStatus(st, 'Captura al menos el peso o el IMC.', 'err'); return; }
+    const comorb = {}; COMORB.forEach(([k]) => { const r = document.querySelector(`input[name="sgc-${k}"]:checked`); if (r) comorb[k] = r.value; });
+    const glp = document.querySelector('input[name="sg-glp1"]:checked');
+    const doc = { paciente_id: p.id, centro_id: p.centro_id, meses: m, fecha: $('#sg-fecha').value, perdido: false, peso, imc,
+      grasa_pct: $('#sg-grasa').value ? Number($('#sg-grasa').value) : null, masa_muscular: $('#sg-musculo').value ? Number($('#sg-musculo').value) : null,
+      comorb, complicacion: $('#sg-compl').checked, complicacion_tipo: $('#sg-compl').checked ? ($('#sg-compl-tipo').value.trim() || null) : null,
+      reoperacion: $('#sg-reop').checked, glp1: glp ? glp.value === 'si' : null, notas: $('#sg-notas').value.trim() || null, creado_por: user.id };
+    setStatus(st, 'Guardando…');
+    const { error } = await sb.from('seguimientos').upsert(doc, { onConflict: 'paciente_id,meses' });
+    if (error) { setStatus(st, 'No se guardó: ' + error.message, 'err'); return; }
+    $('#seg-form-card').hidden = true; setStatus($('#st-seg2'), `Control de ${m} meses guardado.`, 'ok'); await recargar(); renderSeguimiento();
+  });
+  $('#tbody-seg').addEventListener('click', async ev => {
+    const cap = ev.target.closest('[data-segcap]'); if (cap) { abrirControl(pacientes.find(p => p.id === cap.dataset.segcap), Number(cap.dataset.m)); return; }
+    const per = ev.target.closest('[data-segperd]');
+    if (per) { const p = pacientes.find(x => x.id === per.dataset.segperd); const { error } = await sb.from('seguimientos').upsert({ paciente_id: p.id, centro_id: p.centro_id, meses: Number(per.dataset.m), fecha: hoy(), perdido: true, creado_por: user.id }, { onConflict: 'paciente_id,meses' });
+      setStatus($('#st-seg2'), error ? 'No se pudo guardar: ' + error.message : 'Marcado como "no acudió".', error ? 'err' : 'ok'); await recargar(); renderSeguimiento(); return; }
+    const baja = ev.target.closest('[data-segbaja]');
+    if (baja) { if (!baja.dataset.confirm) { baja.dataset.confirm = '1'; baja.textContent = 'Confirmar: quitar del seguimiento'; baja.style.color = 'var(--danger)'; setTimeout(() => { delete baja.dataset.confirm; baja.textContent = 'Quitar del seguimiento'; baja.style.color = ''; }, 5000); return; }
+      const { error } = await sb.from('pacientes').update({ seg_baja: true }).eq('id', baja.dataset.segbaja);
+      setStatus($('#st-seg2'), error ? 'No se pudo: ' + error.message : 'Paciente fuera del seguimiento (sigue en el registro).', error ? 'err' : 'ok'); await recargar(); renderSeguimiento(); }
+  });
+  $('#tbody-seg-hist').addEventListener('click', async ev => {
+    const d = ev.target.closest('[data-segdel]'); if (!d) return;
+    if (!d.dataset.confirm) { d.dataset.confirm = '1'; d.textContent = 'Confirmar borrar'; d.classList.add('confirm'); setTimeout(() => { delete d.dataset.confirm; d.textContent = 'Borrar'; d.classList.remove('confirm'); }, 5000); return; }
+    const { error } = await sb.from('seguimientos').delete().eq('id', d.dataset.segdel);
+    setStatus($('#st-seg2'), error ? 'No se pudo borrar: ' + error.message : 'Control borrado.', error ? 'err' : 'ok'); await recargar(); renderSeguimiento();
   });
 
   // ---------- admin: exportar Excel IFSO ----------
