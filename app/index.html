@@ -292,7 +292,7 @@
     <div class="actions"><button class="btn primary" type="button" id="seg-activar">Activar seguimiento</button></div>
   </div>
   <div id="seg-on" hidden>
-    <div class="banner" id="seg-push" hidden></div>
+    <div class="push-card" id="seg-push" hidden></div>
     <div class="toolbar" style="margin-bottom:8px"><select id="seg-centro" hidden><option value="">Todos los centros</option></select><span class="count" id="seg-count"></span></div>
     <div class="kpis" id="seg-kpis"></div>
     <h2 style="margin:4px 0 6px">Controles que tocan</h2>
@@ -1354,14 +1354,16 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
   async function renderPushBanner(){
     const el = $('#seg-push'); if (esAdmin()) { el.hidden = true; return; }
     const st = await pushEstado(); el.hidden = false;
+    const bell = '<svg class="push-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>';
     const T = {
-      activo: 'Avisos en el celular <b>activados</b>: una notificación al mes con cuántos controles te tocan (sin datos de pacientes). <button class="btn link" type="button" data-push="off">Desactivar</button>',
-      inactivo: '¿Quieres que la app te avise <b>una vez al mes</b> cuántos controles tienes? Solo un aviso, sin correos ni datos de pacientes. <button class="btn link" type="button" data-push="on">Activar avisos en este celular</button>',
-      denegado: 'Los avisos están bloqueados en este dispositivo. Para activarlos, permite las notificaciones de registrobariatrico.com en los ajustes del navegador o del teléfono.',
-      instalar: 'Para recibir avisos en iPhone, primero instala la app en tu pantalla de inicio (botón Compartir → "Agregar a pantalla de inicio") y ábrela desde ahí.',
-      nosoporta: 'Este navegador no permite avisos; los controles pendientes siempre aparecen aquí al entrar. <small style="opacity:.7">(' + esc(pushDetalle) + ')</small>'
+      activo:   { c: 'ok',   t: 'Avisos activados en este celular', d: 'Recibirás una notificación al mes con cuántos controles te tocan. Sin correos y sin datos de pacientes.', b: '<button class="btn link" type="button" data-push="off">Desactivar avisos</button>' },
+      inactivo: { c: 'cta',  t: '¿Te avisamos una vez al mes?', d: 'Una sola notificación al mes con cuántos controles tienes pendientes. Sin correos y sin datos de pacientes.', b: '<button class="btn primary" type="button" data-push="on">Activar avisos en este celular</button>' },
+      denegado: { c: 'warn', t: 'Avisos bloqueados en este dispositivo', d: 'Para activarlos, permite las notificaciones de registrobariatrico.com en los ajustes del navegador o del teléfono y vuelve a entrar.', b: '' },
+      instalar: { c: 'warn', t: 'En iPhone, primero instala la app', d: 'Toca el botón Compartir → "Agregar a pantalla de inicio" y abre la app desde ahí para poder recibir avisos.', b: '' },
+      nosoporta:{ c: 'warn', t: 'Este navegador no permite avisos', d: 'No pasa nada: los controles pendientes siempre aparecen aquí al entrar. <small>(' + esc(pushDetalle) + ')</small>', b: '' }
     };
-    el.innerHTML = T[st];
+    const x = T[st]; el.className = 'push-card ' + x.c;
+    el.innerHTML = bell + '<div class="push-t">' + x.t + '</div><div class="push-d">' + x.d + '</div>' + (x.b ? '<div class="push-b">' + x.b + '</div>' : '');
   }
   $('#seg-push').addEventListener('click', async ev => {
     const b = ev.target.closest('[data-push]'); if (!b) return; b.disabled = true;
