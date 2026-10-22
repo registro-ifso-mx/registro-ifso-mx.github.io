@@ -143,3 +143,8 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .meses b{font-weight:600;color:var(--navy)} @media (prefers-color-scheme: dark){ .meses b{color:var(--fg)} }
 .const-h summary::-webkit-details-marker{color:var(--muted)}
 .const-form .field>label{white-space:normal;line-height:1.25}
+.seg-lista{display:grid;gap:10px}
+.seg-item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.seg-item.atrasado{border-color:var(--danger)}
+.seg-item-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.seg-item-h .hint{margin-left:auto}
