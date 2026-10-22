@@ -1084,7 +1084,7 @@ select cron.schedule('constancias_aviso', '0 15 1-3 12 *', $$select public.avisa
 -- ===== migracion_v19_seguimiento =====
 -- v19: seguimiento OPCIONAL del paciente a 1, 3, 6, 12, 18 y 24 meses, en su propia pestaña.
 --  · Cada socio lo activa si quiere (centros.seguimiento). La captura del registro no cambia.
---  · Por control: fecha, peso (→ IMC, %PPT, %PEP), % grasa y masa muscular (opcionales, InBody),
+--  · Por control: fecha, peso (→ IMC, %PPT, %PEP), % grasa y masa muscular (opcionales, bioimpedancia),
 --    estado de las comorbilidades que tenía al inicio, complicación/reoperación tardía, GLP-1 actual.
 --  · Recordatorio: UNA notificación al mes en el celular (app instalada), sin datos del paciente,
 --    enviada por el workflow "Recordatorios de seguimiento" (repo respaldos) con Web Push. Cero correos.
