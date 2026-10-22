@@ -293,6 +293,7 @@
   </div>
   <div id="seg-on" hidden>
     <div class="push-card" id="seg-push" hidden></div>
+    <p class="status" id="st-push"></p>
     <div class="toolbar" style="margin-bottom:8px"><select id="seg-centro" hidden><option value="">Todos los centros</option></select><span class="count" id="seg-count"></span></div>
     <div class="kpis" id="seg-kpis"></div>
     <h2 style="margin:4px 0 6px">Controles que tocan</h2>
@@ -1362,7 +1363,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     const st = await pushEstado(); el.hidden = false;
     const bell = '<svg class="push-ico" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>';
     const T = {
-      activo:   { c: 'ok',   t: 'Avisos activados en este celular', d: 'Recibirás una notificación al mes con cuántos controles te tocan. Sin correos y sin datos de pacientes.', b: '<button class="btn link" type="button" data-push="off">Desactivar avisos</button>' },
+      activo:   { c: 'ok',   t: 'Avisos activados en este celular', d: 'Recibirás una notificación al mes con cuántos controles te tocan. Sin correos y sin datos de pacientes.', b: '<button class="btn" type="button" data-push="test">Probar un aviso ahora</button> <button class="btn link" type="button" data-push="off">Desactivar avisos</button>' },
       inactivo: { c: 'cta',  t: '¿Te avisamos una vez al mes?', d: 'Una sola notificación al mes con cuántos controles tienes pendientes. Sin correos y sin datos de pacientes.', b: '<button class="btn primary" type="button" data-push="on">Activar avisos en este celular</button>' },
       denegado: { c: 'warn', t: 'Avisos bloqueados en este dispositivo', d: 'Para activarlos, permite las notificaciones de registrobariatrico.com en los ajustes del navegador o del teléfono y vuelve a entrar.', b: '' },
       instalar: { c: 'warn', t: 'En iPhone, primero instala la app', d: 'Toca el botón Compartir → "Agregar a pantalla de inicio" y abre la app desde ahí para poder recibir avisos.', b: '' },
@@ -1373,7 +1374,10 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
   }
   $('#seg-push').addEventListener('click', async ev => {
     const b = ev.target.closest('[data-push]'); if (!b) return; b.disabled = true;
-    try { if (b.dataset.push === 'on') await pushActivar(); else await pushDesactivar(); } catch (e) { setStatus($('#st-seg2'), 'No se pudo cambiar el aviso: ' + e.message, 'err'); }
+    try {
+      if (b.dataset.push === 'test') { const reg = await navigator.serviceWorker.ready; await reg.showNotification('Registro Bariátrico México', { body: 'Así se verá el aviso mensual de seguimiento. Toca para abrir la app.', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'prueba', data: { url: '/app/#seguimiento' } }); setStatus($('#st-push'), 'Aviso de prueba enviado: revisa la barra de notificaciones del teléfono.', 'ok'); b.disabled = false; return; }
+      if (b.dataset.push === 'on') await pushActivar(); else await pushDesactivar();
+    } catch (e) { setStatus($('#st-push'), 'No se pudo: ' + e.message, 'err'); }
     await renderPushBanner();
   });
   // --- vista ---
