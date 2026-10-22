@@ -16,6 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="../config.js"></script>
 <script src="../graficas.js"></script>
+<script src="../constancias_pdf.js"></script>
 <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
@@ -112,6 +113,8 @@
   <nav role="tablist" id="tabs"></nav>
 </header>
 
+<div class="banner" id="const-aviso" style="margin-top:16px" hidden></div>
+
 <!-- CAPTURA -->
 <section id="sec-captura" hidden>
   <form id="form" class="card" autocomplete="off" novalidate>
@@ -128,7 +131,15 @@
         <div class="field"><label for="folio">Folio / iniciales</label><input id="folio" name="folio" placeholder="Sin nombre completo" maxlength="20"></div>
         <div class="field wide"><label>Hospital donde se operó</label>
           <div class="seg" id="seg-hosp"></div>
-          <div class="hosp-add" id="hosp-add" hidden><input id="hosp-nombre" placeholder="Nombre del hospital o clínica" maxlength="120"><button class="btn primary" type="button" id="hosp-save">Agregar</button><button class="btn link" type="button" id="hosp-cancel">Cancelar</button></div>
+          <div class="hosp-add" id="hosp-add" hidden>
+            <input id="hosp-q" placeholder="Busca por nombre y ciudad (ej. Ángeles Torreón)" maxlength="120" autocomplete="off">
+            <button class="btn link" type="button" id="hosp-cancel">Cancelar</button>
+            <div class="hosp-res" id="hosp-res"></div>
+            <div class="hosp-manual" id="hosp-manual" hidden>
+              <span class="hint">¿No aparece en el catálogo oficial? Escríbelo tal como se llama; Coordinación lo validará.</span>
+              <div class="hosp-add"><input id="hosp-nombre" placeholder="Nombre del hospital o clínica" maxlength="120"><button class="btn primary" type="button" id="hosp-save">Agregar pendiente de validar</button></div>
+            </div>
+          </div>
           <button class="btn link" type="button" id="hosp-open">+ Agregar hospital</button>
           <span class="hint" id="hosp-hint">Si operas en varios hospitales, agrégalos aquí una vez; después solo tocas el que corresponde.</span>
         </div>
@@ -255,12 +266,30 @@
   <p class="status" id="st-panel"></p>
 </section>
 
+<!-- CONSTANCIA (socio) -->
+<section id="sec-constancia" hidden>
+  <div class="card">
+    <div class="toolbar" style="margin-bottom:8px"><h2 style="margin:0;flex:1">Constancia de participación</h2><select id="const-anio" style="flex:0 0 auto"></select></div>
+    <p class="hint" style="margin:0 0 10px">La constancia anual vale <b>10 puntos de recertificación</b> ante el Consejo Mexicano de Cirugía General. Pasos: <b>1)</b> descarga el formato de carta de cada hospital donde operaste (ya viene llenado con tus cirugías por mes); <b>2)</b> el hospital lo imprime en su papel membretado, lo firma el representante legal o director general y lo sella; <b>3)</b> sube aquí la carta firmada <b>entre el 1 de diciembre y el 15 de enero</b>. Coordinación la revisa y, a partir de febrero, descargas tu constancia con folio y código QR.</p>
+    <div id="const-estado"></div>
+    <div class="grid" style="margin-top:10px;align-items:end">
+      <div class="field"><label for="const-cedula">Cédula de especialidad</label><input id="const-cedula" maxlength="20" placeholder="Va en la carta y en la constancia"></div>
+      <div class="field"><button class="btn" type="button" id="const-cedula-save">Guardar cédula</button></div>
+    </div>
+    <p class="status" id="st-const"></p>
+  </div>
+  <div id="const-hosps"></div>
+  <div class="empty" id="const-vacio" hidden></div>
+  <input type="file" id="const-file" accept="application/pdf,image/jpeg,image/png" hidden>
+</section>
+
 <!-- ADMIN: CENTROS -->
 <section id="sec-centros" hidden>
   <div class="kpis" id="kpis"></div>
   <h2 style="margin:4px 0 6px">Centros participantes</h2>
   <p class="hint" style="margin:0 0 12px">Cada socio del Colegio es un centro: se crea automáticamente cuando el socio se registra con su correo invitado (pestaña <b>Usuarios</b>); no hay que darlos de alta. Aquí solo supervisas: <b>Renombrar</b> corrige el nombre, <b>Fusionar</b> une dos centros duplicados (pasa pacientes y usuarios al destino y elimina el origen) y <b>Desactivar</b> marca un centro que ya no participa.</p>
   <p class="status" id="st-centros-acciones"></p>
+  <div class="banner" id="hosp-pend" hidden></div>
   <div class="tablewrap">
     <table><thead><tr><th>Centro</th><th>Ciudad / Estado</th><th>Hospitales</th><th class="num">Usuarios</th><th class="num">Pacientes</th><th>Acciones</th></tr></thead><tbody id="tbody-centros"></tbody></table>
     <div class="empty" id="empty-centros">Aún no hay centros. Se crean solos cuando los socios se registran.</div>
@@ -326,6 +355,27 @@
     <p class="status" id="st-exportar"></p>
   </div>
 </section>
+
+<!-- ADMIN: CONSTANCIAS -->
+<section id="sec-constancias" hidden>
+  <div class="toolbar"><select id="cs-anio" style="flex:0 0 auto"></select><button class="btn" type="button" id="cs-sortear">Sortear 20 % para auditoría</button><span class="count" id="cs-count"></span></div>
+  <div class="kpis" id="cs-kpis"></div>
+  <p class="hint" style="margin:0 0 10px">Cada socio sube una carta por hospital (1 dic – 15 ene). Aquí comparas lo que certifica la carta contra lo registrado en la app, aceptas o rechazas cada carta con motivo, sorteas al 20 % para la auditoría de la última semana de enero y, cuando todo está en orden, emites la constancia (folio y QR); el socio la descarga desde su cuenta. Una diferencia de hasta 10 % entre carta y registro se considera normal.</p>
+  <p class="status" id="st-cs"></p>
+  <div class="tablewrap">
+    <table><thead><tr><th>Socio / hospital</th><th class="num">Carta</th><th class="num">Registro</th><th>Dif.</th><th>Alertas</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tbody-cs"></tbody></table>
+    <div class="empty" id="empty-cs">Todavía no hay cartas ni pacientes de este año.</div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h2>Firmas de la constancia</h2>
+    <p class="hint" style="margin:0 0 10px">Nombre y cargo tal como deben aparecer al pie de la constancia.</p>
+    <div class="grid">
+      <div class="field"><label for="cs-presidente">Presidente del CMCOEM</label><input id="cs-presidente" maxlength="120" placeholder="Dr. Nombre Apellido, Presidente del CMCOEM"></div>
+      <div class="field"><label for="cs-responsable">Responsable del Registro</label><input id="cs-responsable" maxlength="120" placeholder="Dr. Nombre Apellido, Responsable del Registro"></div>
+    </div>
+    <div class="actions"><button class="btn" type="button" id="cs-firmas-save">Guardar firmas</button></div>
+  </div>
+</section>
 </div>
 
 <p class="status" id="st-global" style="text-align:center;padding-top:40px"></p>
@@ -386,7 +436,7 @@
 
   // ---------- estado ----------
   let recuperando = /type=recovery/.test(location.hash + location.search);
-  let user = null, perfil = null, centros = [], hospitales = [], pacientes = [], perfiles = [], invitaciones = [], sedes = [], registroCerrado = true, pendingDelete = null, tabActual = null;
+  let user = null, perfil = null, centros = [], hospitales = [], pacientes = [], perfiles = [], invitaciones = [], sedes = [], cartas = [], constancias = [], ajustes = {}, registroCerrado = true, pendingDelete = null, tabActual = null;
   const esAdmin = () => perfil && perfil.rol === 'admin';
   const centroNombre = id => (centros.find(c => c.id === id) || {}).nombre || '—';
 
@@ -468,8 +518,8 @@
   });
 
   // ---------- app ----------
-  const TABS_CENTRO = [['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen']];
-  const TABS_ADMIN = [['centros','Centros'],['usuarios','Usuarios'],['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['exportar','Excel IFSO']];
+  const TABS_CENTRO = [['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['constancia','Constancia']];
+  const TABS_ADMIN = [['centros','Centros'],['usuarios','Usuarios'],['captura','Capturar'],['registros','Registros'],['panel','Panel'],['resumen','Resumen'],['constancias','Constancias'],['exportar','Excel IFSO']];
   async function entrarApp(){
     mostrar('app');
     $('#who-nombre').textContent = perfil.nombre || user.email;
@@ -480,29 +530,33 @@
     ['fs-centro-admin','filtro-centro','th-centro','resumen-centro','panel-centro'].forEach(id => $('#'+id).hidden = !esAdmin());
     $('#ambito').hidden = esAdmin(); $('#ambito-p').hidden = esAdmin();
     await recargar();
-    $('#who-centro').textContent = esAdmin() ? '' : '· ' + centroNombre(perfil.centro_id);
+    $('#who-centro').textContent = esAdmin() || centroNombre(perfil.centro_id) === (perfil.nombre || '') ? '' : '· ' + centroNombre(perfil.centro_id);
     let t = null; try { t = localStorage.getItem('ifso.tab'); } catch(e){}
     irA(tabs.some(x => x[0] === t) ? t : (esAdmin() ? 'centros' : 'captura'));
   }
   function irA(tab){
     tabActual = tab;
     document.querySelectorAll('#tabs [role=tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false'));
-    ['captura','registros','panel','resumen','centros','usuarios','exportar'].forEach(s => $('#sec-'+s).hidden = s !== tab);
+    ['captura','registros','panel','resumen','constancia','centros','usuarios','constancias','exportar'].forEach(s => $('#sec-'+s).hidden = s !== tab);
     try { localStorage.setItem('ifso.tab', tab); } catch(e){}
     if (tab === 'resumen') renderResumen();
     if (tab === 'panel') renderPanel();
     if (tab === 'exportar') llenarAnios($('#ex-anio'), false);
+    if (tab === 'constancia') renderConstancia();
+    if (tab === 'constancias') renderConstancias();
   }
   async function recargar(){
-    const [c, p, h] = await Promise.all([
+    const [c, p, h, ca, co] = await Promise.all([
       sb.from('centros').select('*').order('nombre'),
       sb.from('pacientes').select('*').order('fecha', { ascending: false }).limit(10000),
-      sb.from('hospitales').select('*').order('nombre')
+      sb.from('hospitales').select('*').order('nombre'),
+      sb.from('cartas').select('*'), sb.from('constancias').select('*')
     ]);
-    centros = c.data || []; pacientes = p.data || []; hospitales = h.data || [];
+    centros = c.data || []; pacientes = p.data || []; hospitales = h.data || []; cartas = ca.data || []; constancias = co.data || [];
     if (esAdmin()) {
-      const [u, i, a, sd] = await Promise.all([sb.from('perfiles').select('*').order('creado'), sb.from('invitaciones').select('*').order('creado', { ascending: false }), sb.from('ajustes').select('*').eq('clave', 'registro_cerrado').maybeSingle(), sb.from('sedes').select('*').order('nombre')]);
-      perfiles = u.data || []; invitaciones = i.data || []; registroCerrado = !a.data || a.data.valor === 'true'; sedes = sd.data || [];
+      const [u, i, a, sd] = await Promise.all([sb.from('perfiles').select('*').order('creado'), sb.from('invitaciones').select('*').order('creado', { ascending: false }), sb.from('ajustes').select('*'), sb.from('sedes').select('*').order('nombre')]);
+      perfiles = u.data || []; invitaciones = i.data || []; sedes = sd.data || [];
+      ajustes = Object.fromEntries((a.data || []).map(x => [x.clave, x.valor])); registroCerrado = (ajustes.registro_cerrado || 'true') === 'true';
     }
     renderTodo();
   }
@@ -517,7 +571,8 @@
     llenarAnios($('#filtro-anio'), true); llenarAnios($('#resumen-anio'), true); llenarAnios($('#panel-anio'), true);
     panelCache = { key: null, rows: [] };
     renderRegistros(); if (tabActual === 'resumen') renderResumen(); if (tabActual === 'panel') renderPanel();
-    if (esAdmin()) { renderCentros(); renderUsuarios(); renderSedes(); }
+    if (esAdmin()) { renderCentros(); renderUsuarios(); renderSedes(); if (tabActual === 'constancias') renderConstancias(); }
+    else { avisoConstancia(); if (tabActual === 'constancia') renderConstancia(); }
   }
   function anios(){ const s = new Set(pacientes.map(p => p.fecha.slice(0,4))); s.add(String(new Date().getFullYear())); return [...s].sort().reverse(); }
   function llenarAnios(sel, conTodos){
@@ -579,30 +634,55 @@
   const centroCaptura = () => esAdmin() ? $('#centro-admin').value : (perfil && perfil.centro_id);
   const hospDe = c => hospitales.filter(h => h.centro_id === c && h.activo !== false);
   const hospNombre = id => { const h = hospitales.find(x => x.id === id); return h ? h.nombre : ''; };
+  const titulo = t => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim().replace(/(^|[\s(\/.-])([a-záéíóúñü])/g, (m, a, b) => a + b.toUpperCase()).replace(/\s(De|Del|Y|E|En|Para)(?=\s)/g, m => m.toLowerCase()).replace(/\bS\.? ?A\.? de C\.? ?V\.?/gi, 'S.A. de C.V.').replace(/\bS\.? ?C\.?(?=\s|$)/g, 'S.C.').replace(/\b(Imss|Issste|Hgz|Hgr|Umf|Umaa|Isssteson|Pemex|Dif|Cmn|Hg)\b/g, m => m.toUpperCase());
   function renderHosp(sel){
     const c = centroCaptura(), hs = hospDe(c);
     const actual = sel !== undefined ? sel : ($('input[name=hospital]:checked') || {}).value;
     const elegido = hs.some(h => h.id === actual) ? actual : (hs.length === 1 ? hs[0].id : null);
-    $('#seg-hosp').innerHTML = hs.map(h => `<label><input type="radio" name="hospital" value="${h.id}" ${hs.length ? 'required' : ''} ${h.id === elegido ? 'checked' : ''}>${esc(h.nombre)}</label>`).join('');
+    $('#seg-hosp').innerHTML = hs.map(h => `<label title="${h.clues ? 'CLUES ' + h.clues : 'Pendiente de validar'}"><input type="radio" name="hospital" value="${h.id}" ${hs.length ? 'required' : ''} ${h.id === elegido ? 'checked' : ''}>${esc(h.nombre)}${h.validacion === 'pendiente' ? ' <small>(por validar)</small>' : ''}</label>`).join('');
     $('#hosp-hint').textContent = hs.length ? (hs.length === 1 ? 'Si también operas en otro hospital, agrégalo aquí.' : 'Toca el hospital donde se operó este paciente.') : 'Agrega el hospital o clínica donde operas; se guarda con cada paciente.';
   }
   $('#centro-admin').addEventListener('change', () => renderHosp());
-  $('#hosp-open').addEventListener('click', () => { $('#hosp-add').hidden = false; $('#hosp-open').hidden = true; $('#hosp-nombre').focus(); });
+  $('#hosp-open').addEventListener('click', () => { $('#hosp-add').hidden = false; $('#hosp-open').hidden = true; $('#hosp-res').innerHTML = ''; $('#hosp-manual').hidden = true; $('#hosp-q').value = ''; $('#hosp-q').focus(); });
   $('#hosp-cancel').addEventListener('click', () => { $('#hosp-add').hidden = true; $('#hosp-open').hidden = false; $('#hosp-nombre').value = ''; });
-  $('#hosp-nombre').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); $('#hosp-save').click(); } });
-  $('#hosp-save').addEventListener('click', async () => {
-    const nombre = $('#hosp-nombre').value.trim().replace(/\s+/g, ' '), c = centroCaptura();
-    if (!nombre) { $('#hosp-nombre').focus(); return; }
+  let buscaT = null, buscaN = 0;
+  $('#hosp-q').addEventListener('input', () => {
+    clearTimeout(buscaT); const q = $('#hosp-q').value.trim();
+    if (q.length < 3) { $('#hosp-res').innerHTML = ''; $('#hosp-manual').hidden = true; return; }
+    buscaT = setTimeout(async () => {
+      const n = ++buscaN; $('#hosp-res').innerHTML = '<span class="hint">Buscando…</span>';
+      const { data, error } = await sb.rpc('buscar_clues', { q });
+      if (n !== buscaN) return;
+      if (error) { $('#hosp-res').innerHTML = '<span class="hint">No se pudo buscar: ' + esc(error.message) + '</span>'; return; }
+      const rs = data || [];
+      $('#hosp-res').innerHTML = rs.map(r => `<button type="button" class="hosp-item" data-clues="${r.clues}"><b>${esc(titulo(r.nombre))}</b>${r.nombre_comercial && r.nombre_comercial !== r.nombre ? ' <span class="hint">(' + esc(titulo(r.nombre_comercial)) + ')</span>' : ''}<br><span class="hint">${esc(titulo(r.municipio))}, ${esc(titulo(r.entidad))} · ${r.tipo === 'hospital' ? 'Hospitalización' : 'Consulta externa'} · ${esc(r.institucion)}</span></button>`).join('')
+        + (rs.length ? '' : '<span class="hint">Sin coincidencias en el catálogo oficial (CLUES). Prueba con menos palabras o solo la ciudad.</span>');
+      $('#hosp-manual').hidden = false; $('#hosp-nombre').value = q;
+    }, 350);
+  });
+  async function agregarHospital(doc){
+    const c = centroCaptura();
     if (!c) { setStatus($('#st-form'), 'Elige el centro primero.', 'err'); return; }
-    const ya = hospDe(c).find(h => h.nombre.toLowerCase() === nombre.toLowerCase());
+    const ya = hospDe(c).find(h => (doc.clues && h.clues === doc.clues) || h.nombre.toLowerCase() === doc.nombre.toLowerCase());
     let id = ya && ya.id;
     if (!id) {
-      const { data, error } = await sb.from('hospitales').insert({ centro_id: c, nombre }).select();
+      const { data, error } = await sb.from('hospitales').insert(Object.assign({ centro_id: c }, doc)).select();
       if (error) { setStatus($('#st-form'), 'No se pudo agregar: ' + error.message, 'err'); return; }
       id = data && data[0] && data[0].id;
       const h = await sb.from('hospitales').select('*').order('nombre'); hospitales = h.data || [];
     }
     $('#hosp-cancel').click(); renderHosp(id); setStatus($('#st-form'), '');
+  }
+  $('#hosp-res').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-clues]'); if (!b) return;
+    const nombre = b.querySelector('b').textContent, meta = b.querySelector('.hint').textContent.split(' · ')[0].split(', ');
+    await agregarHospital({ nombre, clues: b.dataset.clues, validacion: 'validado', municipio: meta[0] || null, entidad: meta[1] || null });
+  });
+  $('#hosp-nombre').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); $('#hosp-save').click(); } });
+  $('#hosp-save').addEventListener('click', async () => {
+    const nombre = $('#hosp-nombre').value.trim().replace(/\s+/g, ' ');
+    if (!nombre) { $('#hosp-nombre').focus(); return; }
+    await agregarHospital({ nombre, validacion: 'pendiente' });
   });
 
   // ---------- registros ----------
@@ -751,11 +831,21 @@
     if (error) setStatus($('#st-sede'), 'No se pudo quitar: ' + error.message, 'err'); else { setStatus($('#st-sede'), 'Sede eliminada. Los casos ya capturados con ese nombre se conservan.', 'ok'); await recargar(); }
   });
 
+  $('#hosp-pend').addEventListener('click', async ev => {
+    const v = ev.target.closest('[data-valhosp]'), r = ev.target.closest('[data-rechosp]'); if (!v && !r) return;
+    const id = (v || r).dataset[v ? 'valhosp' : 'rechosp'];
+    const { error } = await sb.from('hospitales').update(v ? { validacion: 'validado' } : { validacion: 'rechazado', activo: false }).eq('id', id);
+    if (error) { setStatus($('#st-centros-acciones'), 'No se pudo: ' + error.message, 'err'); return; }
+    await recargar();
+  });
   function renderCentros(){
     const nUsers = id => perfiles.filter(p => p.centro_id === id).length, nPac = id => pacientes.filter(p => p.centro_id === id).length;
     $('#kpis').innerHTML = [[centros.length,'centros'],[perfiles.length,'usuarios'],[pacientes.length,'pacientes'],[pacientes.filter(p=>p.fecha.startsWith(String(new Date().getFullYear()))).length,'pacientes ' + new Date().getFullYear()]]
       .map(([n,l]) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`).join('');
     $('#empty-centros').hidden = centros.length > 0;
+    const pend = hospitales.filter(h => h.validacion === 'pendiente' && h.activo !== false);
+    $('#hosp-pend').hidden = !pend.length;
+    $('#hosp-pend').innerHTML = pend.length ? `<b>${pend.length} hospital${pend.length === 1 ? '' : 'es'} pendiente${pend.length === 1 ? '' : 's'} de validar</b> (no estaban en el catálogo CLUES): ` + pend.map(h => `<div style="margin-top:6px">${esc(h.nombre)} <span class="hint">· ${esc(centroNombre(h.centro_id))}</span> <button class="rowbtn confirm" data-valhosp="${h.id}">Validar</button> <button class="rowbtn" data-rechosp="${h.id}">Rechazar</button></div>`).join('') : '';
     $('#tbody-centros').innerHTML = centros.map(c => {
       const otros = centros.filter(o => o.id !== c.id).map(o => `<option value="${o.id}">${esc(o.nombre)}</option>`).join('');
       let acciones;
@@ -808,8 +898,8 @@
   const fechaCorta = iso => { const d = new Date(iso); return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }); };
   function estadoCorreo(i){
     if (i.correos_pausados) return 'Correos pausados';
-    if (i.reenviar) return 'Reenvío en la próxima hora';
-    if (!i.enviado) return 'Correo de invitación: sale en menos de una hora';
+    if (i.reenviar) return 'Reenvío en los próximos 10 minutos';
+    if (!i.enviado) return 'Correo de invitación: sale en menos de 10 minutos';
     const r = i.recordatorios || 0;
     return 'Invitado por correo el ' + fechaCorta(i.enviado) + (r ? ` · ${r} recordatorio${r === 1 ? '' : 's'} (último ${fechaCorta(i.ultimo_correo)})` : ' · recordatorio automático a los 5 días');
   }
@@ -899,7 +989,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     if (repetidos.length) partes.push(`${repetidos.length} ya estaba${repetidos.length === 1 ? '' : 'n'} en la lista`);
     if (invalidos.length) partes.push(`${invalidos.length} no válido${invalidos.length === 1 ? '' : 's'}: ${invalidos.join(', ')}`);
     $('#in-lista').value = invalidos.join('\n');
-    setStatus($('#st-invitar'), partes.join(' · ') + (nuevos.length ? '. El correo de invitación les llega solo en menos de una hora (y un recordatorio si no entran).' : '.'), invalidos.length && !nuevos.length ? 'err' : 'ok');
+    setStatus($('#st-invitar'), partes.join(' · ') + (nuevos.length ? '. El correo de invitación les llega solo en menos de 10 minutos (y un recordatorio si no entran).' : '.'), invalidos.length && !nuevos.length ? 'err' : 'ok');
     await recargar();
   });
   $('#registro-cerrado').addEventListener('change', async ev => {
@@ -919,7 +1009,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     }
     const r = ev.target.closest('[data-reinv]');
     if (r) { const { error } = await sb.from('invitaciones').update({ reenviar: true, correos_pausados: false }).eq('email', r.dataset.reinv);
-      setStatus($('#st-invitar'), error ? 'No se pudo programar: ' + error.message : 'Listo: el correo se reenviará en la próxima hora.', error ? 'err' : 'ok'); await recargar(); return; }
+      setStatus($('#st-invitar'), error ? 'No se pudo programar: ' + error.message : 'Listo: el correo se reenviará en los próximos 10 minutos.', error ? 'err' : 'ok'); await recargar(); return; }
     const p = ev.target.closest('[data-pauseinv]');
     if (p) { const i = invitaciones.find(x => x.email === p.dataset.pauseinv); const { error } = await sb.from('invitaciones').update({ correos_pausados: !i.correos_pausados }).eq('email', p.dataset.pauseinv);
       setStatus($('#st-invitar'), error ? 'No se pudo cambiar: ' + error.message : (i.correos_pausados ? 'Correos reanudados.' : 'No se le enviarán más correos.'), error ? 'err' : 'ok'); await recargar(); return; }
@@ -927,6 +1017,230 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     const { error } = await sb.from('invitaciones').delete().eq('email', d.dataset.delinv);
     setStatus($('#st-invitar'), error ? 'No se pudo quitar: ' + error.message : 'Invitación quitada.', error ? 'err' : 'ok');
     await recargar();
+  });
+
+  // ---------- constancias (común) ----------
+  const MESES = window.RBM_PDF.MESES, MES3 = MESES.map(m => m.slice(0, 3));
+  const anioConstDefault = () => { const d = new Date(); return String(d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear()); };
+  const enPlazo = () => { const m = new Date().getMonth() + 1, d = new Date().getDate(); return m === 12 || (m === 1 && d <= 15); };
+  const mesesDe = (centro, hosp, anio) => { const a = Array(12).fill(0); pacientes.forEach(p => { if (p.centro_id === centro && p.hospital_id === hosp && p.fecha.startsWith(anio)) a[Number(p.fecha.slice(5, 7)) - 1]++; }); return a; };
+  const sinHosp = (centro, anio) => pacientes.filter(p => p.centro_id === centro && !p.hospital_id && p.fecha.startsWith(anio)).length;
+  const cartaDe = (centro, hosp, anio) => cartas.find(c => c.centro_id === centro && c.hospital_id === hosp && c.anio === Number(anio));
+  const constDe = (centro, anio) => constancias.find(c => c.centro_id === centro && c.anio === Number(anio));
+  // Hospitales que cuentan para el año: con pacientes registrados o con carta subida.
+  const hospsConst = (centro, anio) => hospitales.filter(h => h.centro_id === centro && (pacientes.some(p => p.hospital_id === h.id && p.fecha.startsWith(anio)) || cartaDe(centro, h.id, anio))).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const perfilDe = centro => perfiles.find(p => p.centro_id === centro && p.rol === 'centro') || perfiles.find(p => p.centro_id === centro) || {};
+  const CARGOS = ['Representante legal', 'Director general', 'Director médico', 'Director de la unidad', 'Jefe de enseñanza', 'Administrador'];
+  const pillCarta = c => !c ? '<span class="pill rev">Sin carta</span>' : c.estado === 'aceptada' ? '<span class="pill" style="background:#e3f5ea;color:var(--ok)">Aceptada</span>' : c.estado === 'rechazada' ? '<span class="pill rev">Rechazada</span>' : '<span class="pill">En revisión</span>';
+  const VERIFICAR = folio => BASE_URL() + 'verificar/?f=' + encodeURIComponent(folio);
+  async function verCarta(c, st){
+    const { data, error } = await sb.storage.from('cartas').createSignedUrl(c.archivo, 600);
+    if (error || !data) { setStatus(st, 'No se pudo abrir la carta: ' + (error ? error.message : ''), 'err'); return; }
+    window.open(data.signedUrl, '_blank');
+  }
+  async function descargarConstancia(k, st){
+    setStatus(st, 'Generando constancia…');
+    try {
+      const d = Object.assign({}, k.detalle || {}, { folio: k.folio, anio: k.anio, auditoria: k.auditoria, muestreado: k.muestreado, emitida: (k.emitida || '').slice(0, 10), url: VERIFICAR(k.folio) });
+      const doc = await window.RBM_PDF.constancia(d); await doc.save(); setStatus(st, '');
+    } catch (e) { setStatus(st, 'No se pudo generar el PDF: ' + e.message, 'err'); }
+  }
+  async function descargarCarta(h, centro, anio, st){
+    setStatus(st, 'Generando formato…');
+    try {
+      const pf = esAdmin() ? perfilDe(centro) : perfil; const c = centros.find(x => x.id === centro) || {};
+      const doc = await window.RBM_PDF.carta({ hospital: h, socio: pf.nombre || c.nombre, cedula: pf.cedula, anio: Number(anio), meses: mesesDe(centro, h.id, anio), ciudad: c.ciudad });
+      await doc.save(); setStatus(st, '');
+    } catch (e) { setStatus(st, 'No se pudo generar el PDF: ' + e.message, 'err'); }
+  }
+
+  // ---------- constancia (socio) ----------
+  function avisoConstancia(){
+    if (esAdmin()) return;
+    const anio = anioConstDefault(), c = perfil.centro_id;
+    const faltan = hospsConst(c, anio).filter(h => { const k = cartaDe(c, h.id, anio); return !k || k.estado === 'rechazada'; });
+    const k = constDe(c, anio);
+    const el = $('#const-aviso');
+    if (k && k.estado === 'emitida') { el.hidden = false; el.innerHTML = `Tu constancia <b>${anio}</b> ya está lista (folio ${esc(k.folio)}). <button class="btn link" type="button" data-descconst="${k.id}">Descargar PDF</button>`; }
+    else if (enPlazo() && faltan.length) { el.hidden = false; el.innerHTML = `<b>Constancia ${anio}:</b> falta la carta firmada de ${faltan.map(h => esc(h.nombre)).join(', ')}. Descarga el formato aquí, pídelo al hospital y súbelo <b>antes del 15 de enero</b>.`; }
+    else el.hidden = true;
+  }
+  function renderConstancia(){
+    const c = perfil.centro_id, sel = $('#const-anio');
+    if (!sel.options.length) { sel.innerHTML = anios().map(a => `<option value="${a}">${a}</option>`).join(''); sel.value = [...sel.options].some(o => o.value === anioConstDefault()) ? anioConstDefault() : anios()[0]; }
+    const anio = sel.value; const k = constDe(c, anio); $('#const-cedula').value = perfil.cedula || '';
+    avisoConstancia();
+    const sh = sinHosp(c, anio);
+    let est = '';
+    if (k && k.estado === 'emitida') est += `<div class="banner" style="background:#e3f5ea"><b>Constancia ${anio} emitida</b> · Folio <span class="code">${esc(k.folio)}</span> · ${esc((k.emitida || '').slice(0, 10))}<br><button class="btn primary" type="button" style="margin-top:8px" data-descconst="${k.id}">Descargar constancia (PDF con QR)</button></div>`;
+    else if (k && k.muestreado) est += `<div class="banner">Tu registro ${anio} fue seleccionado en el <b>muestreo aleatorio de auditoría</b> (20 % de los socios). Coordinación comparará tus cartas con lo registrado y puede pedirte copia del registro de quirófano; tendrás 15 días para aclarar cualquier diferencia.</div>`;
+    if (sh) est += `<div class="banner">${sh} paciente${sh === 1 ? '' : 's'} de ${anio} sin hospital asignado: no cuenta${sh === 1 ? '' : 'n'} para la carta. Ve a <b>Registros</b>, toca cada uno y elige el hospital.</div>`;
+    $('#const-estado').innerHTML = est;
+    const hs = hospsConst(c, anio);
+    $('#const-vacio').hidden = hs.length > 0; $('#const-vacio').textContent = `No hay pacientes de ${anio} con hospital asignado. Captura tus cirugías y elige el hospital en cada una.`;
+    $('#const-hosps').innerHTML = hs.map(h => {
+      const m = mesesDe(c, h.id, anio), tot = m.reduce((a, b) => a + b, 0), ca = cartaDe(c, h.id, anio);
+      const f = (k2, l, ph, extra) => `<div class="field"><label for="hf-${k2}-${h.id}">${l}</label><input id="hf-${k2}-${h.id}" data-hf="${k2}" value="${esc(h[k2] || '')}" placeholder="${ph || ''}" maxlength="120" ${extra || ''}></div>`;
+      const cargo = `<div class="field"><label for="hf-cargo-${h.id}">Cargo de quien firma</label><select id="hf-cargo-${h.id}" data-hf="cargo_firmante"><option value="">Elige…</option>${CARGOS.map(x => `<option ${h.cargo_firmante === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`;
+      const faltanDatos = !(h.licencia && h.firmante && h.telefono && h.correo_contacto);
+      let estado;
+      if (!ca) estado = `<span class="hint">Todavía no has subido la carta de este hospital.</span>`;
+      else if (ca.estado === 'rechazada') estado = `<span class="hint" style="color:var(--danger)">Carta rechazada${ca.motivo ? ': ' + esc(ca.motivo) : ''}. Corrige y vuelve a subirla.</span>`;
+      else estado = `<span class="hint">Carta subida el ${esc(ca.subida.slice(0, 10))} · certifica <b>${ca.total}</b> cirugías · ${ca.estado === 'aceptada' ? 'aceptada por Coordinación' : 'en revisión'}.</span> <button class="btn link" type="button" data-hver="${h.id}">Ver carta</button>`;
+      const puedeSubir = !ca || ca.estado !== 'aceptada';
+      return `<div class="card const-h" data-h="${h.id}">
+        <h2 style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">${esc(h.nombre)} ${pillCarta(ca)}</h2>
+        <p class="hint" style="margin:0 0 8px">Cirugías registradas en la app en ${anio}: <b>${tot}</b></p>
+        <div class="meses">${m.map((n, i) => `<span><small>${MES3[i]}</small><b>${n}</b></span>`).join('')}</div>
+        <details ${faltanDatos ? 'open' : ''} style="margin-top:12px"><summary style="cursor:pointer;font-weight:500">Datos del hospital para la carta ${faltanDatos ? '<span class="pill rev">faltan datos</span>' : '<span class="pill">completos</span>'}</summary>
+          <div class="grid const-form" style="margin-top:10px">
+            ${f('licencia', 'Licencia sanitaria / aviso de funcionamiento COFEPRIS', 'Número')}
+            ${f('firmante', 'Nombre de quien firma', 'Representante legal o director')}
+            ${cargo}
+            ${f('telefono', 'Teléfono del hospital (conmutador y extensión)', '', 'inputmode="tel"')}
+            ${f('correo_contacto', 'Correo institucional de quien firma', '', 'type="email"')}
+            ${f('domicilio', 'Domicilio del hospital', 'Calle, número, colonia, ciudad')}
+          </div>
+          <div class="actions"><button class="btn" type="button" data-hsave="${h.id}">Guardar datos</button></div>
+        </details>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" type="button" data-hpdf="${h.id}">Descargar formato de carta (PDF)</button>
+          <button class="btn" type="button" data-htxt="${h.id}">Copiar texto</button>
+        </div>
+        ${puedeSubir ? `<div class="actions" style="margin-top:10px;align-items:end">
+          <div class="field" style="flex:0 0 190px"><label for="ht-${h.id}">Total anual que certifica la carta</label><input id="ht-${h.id}" type="number" inputmode="numeric" min="0" max="5000" value="${ca ? ca.total : tot}" data-htotal="${h.id}"></div>
+          <button class="btn" type="button" data-hup="${h.id}">${ca ? 'Subir carta corregida' : 'Subir carta firmada'} (PDF o foto)</button>
+        </div>` : ''}
+        <p style="margin:8px 0 0">${estado}</p>
+      </div>`;
+    }).join('');
+  }
+  $('#const-anio').addEventListener('change', renderConstancia);
+  $('#const-cedula-save').addEventListener('click', async () => {
+    const cedula = $('#const-cedula').value.trim() || null;
+    const { error } = await sb.from('perfiles').update({ cedula }).eq('user_id', user.id);
+    if (error) { setStatus($('#st-const'), 'No se pudo guardar: ' + error.message, 'err'); return; }
+    perfil.cedula = cedula; setStatus($('#st-const'), 'Cédula guardada.', 'ok');
+  });
+  let hospSubiendo = null;
+  document.addEventListener('click', async ev => {
+    const st = $('#st-const');
+    const dc = ev.target.closest('[data-descconst]');
+    if (dc) { const k = constancias.find(x => x.id === dc.dataset.descconst); if (k) await descargarConstancia(k, esAdmin() ? $('#st-cs') : st); return; }
+    const card = ev.target.closest('.const-h'); if (!card) return;
+    const hid = card.dataset.h, h = hospitales.find(x => x.id === hid), c = perfil.centro_id, anio = $('#const-anio').value;
+    if (ev.target.closest('[data-hsave]')) {
+      const doc = {}; card.querySelectorAll('[data-hf]').forEach(i => { doc[i.dataset.hf] = i.value.trim() || null; });
+      const { error } = await sb.from('hospitales').update(doc).eq('id', hid);
+      if (error) { setStatus(st, 'No se pudo guardar: ' + error.message, 'err'); return; }
+      Object.assign(h, doc); setStatus(st, 'Datos del hospital guardados.', 'ok'); renderConstancia(); return;
+    }
+    if (ev.target.closest('[data-hpdf]')) { card.querySelector('[data-hsave]').click(); await descargarCarta(h, c, anio, st); return; }
+    if (ev.target.closest('[data-htxt]')) {
+      const txt = window.RBM_PDF.cartaTexto({ hospital: h, socio: perfil.nombre, cedula: perfil.cedula, anio: Number(anio), meses: mesesDe(c, hid, anio), ciudad: (centros.find(x => x.id === c) || {}).ciudad });
+      try { await navigator.clipboard.writeText(txt); setStatus(st, 'Texto de la carta copiado. Pégalo en Word sobre el membrete del hospital.', 'ok'); } catch (e) { setStatus(st, 'No se pudo copiar.', 'err'); }
+      return;
+    }
+    if (ev.target.closest('[data-hver]')) { const ca = cartaDe(c, hid, anio); if (ca) await verCarta(ca, st); return; }
+    if (ev.target.closest('[data-hup]')) {
+      const tot = Number(card.querySelector('[data-htotal]').value);
+      if (!(tot >= 0)) { setStatus(st, 'Escribe el total anual que dice la carta.', 'err'); return; }
+      hospSubiendo = { hid, tot, anio }; $('#const-file').value = ''; $('#const-file').click(); return;
+    }
+  });
+  $('#const-file').addEventListener('change', async () => {
+    const f = $('#const-file').files[0], st = $('#st-const'); if (!f || !hospSubiendo) return;
+    if (f.size > 10 * 1024 * 1024) { setStatus(st, 'El archivo pesa más de 10 MB. Escanea en menor resolución o guarda como PDF.', 'err'); return; }
+    const { hid, tot, anio } = hospSubiendo, c = perfil.centro_id;
+    const ext = f.type === 'application/pdf' ? 'pdf' : f.type === 'image/png' ? 'png' : 'jpg';
+    const ruta = `${c}/${anio}/${hid}.${ext}`;
+    setStatus(st, 'Subiendo carta…');
+    const up = await sb.storage.from('cartas').upload(ruta, f, { upsert: true, contentType: f.type || 'application/octet-stream' });
+    if (up.error) { setStatus(st, 'No se pudo subir: ' + up.error.message, 'err'); return; }
+    const { error } = await sb.from('cartas').upsert({ centro_id: c, hospital_id: hid, anio: Number(anio), archivo: ruta, total: tot }, { onConflict: 'centro_id,hospital_id,anio' });
+    if (error) { setStatus(st, 'Se subió el archivo pero no se pudo registrar: ' + error.message, 'err'); return; }
+    hospSubiendo = null; setStatus(st, 'Carta recibida. Coordinación la revisará; aquí verás si fue aceptada.', 'ok'); await recargar();
+  });
+
+  // ---------- admin: constancias ----------
+  let csAccion = { id: null, tipo: null };
+  function alertasDe(centro, anio){
+    const ps = pacientes.filter(p => p.centro_id === centro && p.fecha.startsWith(anio)); const al = [];
+    const porDia = {}; ps.forEach(p => { const d = (p.creado || '').slice(0, 10); porDia[d] = (porDia[d] || 0) + 1; });
+    const max = Math.max(0, ...Object.values(porDia)); if (max >= 15) al.push(`${max} pacientes capturados en un mismo día`);
+    if (ps.length >= 50 && !ps.some(p => p.reop || p.muerte)) al.push(`${ps.length} casos sin ninguna reoperación ni muerte`);
+    const folios = ps.map(p => (p.folio || '').trim().toLowerCase()).filter(Boolean); const rep = folios.length - new Set(folios).size; if (rep >= 3) al.push(`${rep} folios repetidos`);
+    return al;
+  }
+  function renderConstancias(){
+    const sel = $('#cs-anio');
+    if (!sel.options.length) { sel.innerHTML = anios().map(a => `<option value="${a}">${a}</option>`).join(''); sel.value = [...sel.options].some(o => o.value === anioConstDefault()) ? anioConstDefault() : anios()[0]; }
+    const anio = sel.value, A = Number(anio);
+    $('#cs-presidente').value = ajustes.const_presidente || ''; $('#cs-responsable').value = ajustes.const_responsable || '';
+    const socios = centros.filter(c => pacientes.some(p => p.centro_id === c.id && p.fecha.startsWith(anio)) || cartas.some(k => k.centro_id === c.id && k.anio === A));
+    const cs = cartas.filter(k => k.anio === A), ks = constancias.filter(k => k.anio === A);
+    $('#cs-kpis').innerHTML = [[socios.length, 'socios con pacientes ' + anio], [cs.length, 'cartas recibidas'], [cs.filter(k => k.estado === 'aceptada').length, 'cartas aceptadas'], [ks.filter(k => k.muestreado).length, 'en auditoría (sorteo)'], [ks.filter(k => k.estado === 'emitida').length, 'constancias emitidas']].map(([n, l]) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`).join('');
+    $('#cs-count').textContent = '';
+    $('#empty-cs').hidden = socios.length > 0;
+    const pct = (a, b) => b ? Math.round(Math.abs(a - b) / b * 100) : (a ? 100 : 0);
+    $('#tbody-cs').innerHTML = socios.map(c => {
+      const k = constDe(c.id, anio), hs = hospsConst(c.id, anio), al = alertasDe(c.id, anio), sh = sinHosp(c.id, anio);
+      const regTot = pacientes.filter(p => p.centro_id === c.id && p.fecha.startsWith(anio)).length;
+      const cartaTot = hs.reduce((a, h) => { const ca = cartaDe(c.id, h.id, anio); return a + (ca ? ca.total : 0); }, 0);
+      const acept = hs.filter(h => (cartaDe(c.id, h.id, anio) || {}).estado === 'aceptada').length;
+      if (sh) al.push(`${sh} paciente${sh === 1 ? '' : 's'} sin hospital`);
+      let estado = k && k.estado === 'emitida' ? `<span class="pill" style="background:#e3f5ea;color:var(--ok)">Emitida</span><br><span class="code" style="font-size:.8rem;white-space:nowrap">${esc(k.folio)}</span>` : `${acept}/${hs.length} cartas aceptadas`;
+      if (k && k.muestreado) estado += ' <span class="pill" style="background:var(--warn-soft);color:var(--warn)">Auditoría</span>';
+      let acc = '';
+      if (k && k.estado === 'emitida') acc = `<button class="rowbtn" data-descconst="${k.id}">Descargar PDF</button>`;
+      else if (acept > 0 && acept === hs.length) acc = csAccion.id === c.id && csAccion.tipo === 'emitir' ? `<button class="rowbtn confirm" data-csemitir="${c.id}">Confirmar: emitir constancia</button> <button class="rowbtn" data-cscancel="1">Cancelar</button>` : `<button class="rowbtn" data-csemitir0="${c.id}">Emitir constancia</button>`;
+      const aud = k && k.muestreado && !(k.estado === 'emitida') ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><input data-csaud="${c.id}" value="${esc(k.auditoria || '')}" placeholder="Resultado de la auditoría (p. ej. aprobada sin discrepancias)" style="min-height:34px;padding:4px 8px;width:260px"><button class="rowbtn" data-csaudsave="${c.id}">Guardar</button></div>` : '';
+      const filaSocio = `<tr style="background:var(--accent-soft)"><td style="white-space:normal"><b>${esc(c.nombre)}</b><br><span class="hint">${esc(perfilDe(c.id).cedula ? 'Cédula ' + perfilDe(c.id).cedula : 'sin cédula')}</span></td><td class="num">${cartaTot}</td><td class="num">${regTot}</td><td>${pct(cartaTot, regTot) > 10 && cartaTot ? `<span class="pill rev">${pct(cartaTot, regTot)} %</span>` : cartaTot ? pct(cartaTot, regTot) + ' %' : '—'}</td><td style="white-space:normal;min-width:200px">${al.map(a => `<span class="pill rev" style="display:inline-block;margin:1px 0;white-space:nowrap">${esc(a)}</span>`).join('<br>') || '—'}</td><td style="white-space:normal">${estado}</td><td style="white-space:normal;min-width:220px">${acc}${aud}</td></tr>`;
+      const filasH = hs.map(h => {
+        const ca = cartaDe(c.id, h.id, anio), m = mesesDe(c.id, h.id, anio), rt = m.reduce((a, b) => a + b, 0), d = ca ? pct(ca.total, rt) : null;
+        let acc2 = '';
+        if (ca) {
+          acc2 = `<button class="rowbtn" data-csver="${ca.id}">Ver carta</button> `;
+          if (ca.estado !== 'aceptada') acc2 += `<button class="rowbtn" data-csok="${ca.id}">Aceptar</button> `;
+          if (ca.estado !== 'rechazada') acc2 += csAccion.id === ca.id && csAccion.tipo === 'rechazar' ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><input data-csmotivo="${ca.id}" placeholder="Motivo (lo verá el socio)" style="min-height:34px;padding:4px 8px;width:220px"><button class="rowbtn confirm" data-csno="${ca.id}">Rechazar</button> <button class="rowbtn" data-cscancel="1">Cancelar</button></div>` : `<button class="rowbtn" data-csno0="${ca.id}">Rechazar</button>`;
+        }
+        const meses = `<span class="hint" style="font-variant-numeric:tabular-nums">${m.map((n, i) => MES3[i] + ' ' + n).join(' · ')}</span>`;
+        return `<tr><td style="white-space:normal;padding-left:22px">${esc(h.nombre)}${h.clues ? ` <span class="hint">CLUES ${esc(h.clues)}</span>` : ' <span class="pill rev">sin CLUES</span>'}<br>${meses}<br><span class="hint">${h.licencia ? 'Lic. ' + esc(h.licencia) : 'sin licencia'} · ${h.firmante ? esc(h.firmante) + (h.cargo_firmante ? ', ' + esc(h.cargo_firmante) : '') : 'sin firmante'} · ${esc(h.telefono || 'sin tel.')} · ${esc(h.correo_contacto || 'sin correo')}</span></td>
+          <td class="num">${ca ? ca.total : '—'}</td><td class="num">${rt}</td><td>${d == null ? '—' : d > 10 ? `<span class="pill rev">${d} %</span>` : d + ' %'}</td><td></td><td style="white-space:normal">${pillCarta(ca)}${ca ? `<br><span class="hint">${esc(ca.subida.slice(0, 10))}${ca.estado === 'rechazada' && ca.motivo ? ' · ' + esc(ca.motivo) : ''}</span>` : ''}</td><td style="white-space:normal;min-width:220px">${acc2}</td></tr>`;
+      }).join('');
+      return filaSocio + filasH;
+    }).join('');
+  }
+  $('#cs-anio').addEventListener('change', () => { csAccion = { id: null, tipo: null }; renderConstancias(); });
+  $('#cs-firmas-save').addEventListener('click', async () => {
+    const { error } = await sb.from('ajustes').upsert([{ clave: 'const_presidente', valor: $('#cs-presidente').value.trim() }, { clave: 'const_responsable', valor: $('#cs-responsable').value.trim() }]);
+    setStatus($('#st-cs'), error ? 'No se pudo guardar: ' + error.message : 'Firmas guardadas; aparecen en las constancias que emitas de ahora en adelante.', error ? 'err' : 'ok'); if (!error) await recargar();
+  });
+  $('#cs-sortear').addEventListener('click', async ev => {
+    const anio = Number($('#cs-anio').value), st = $('#st-cs');
+    if (!ev.target.dataset.confirm) { ev.target.dataset.confirm = '1'; ev.target.textContent = `Confirmar sorteo ${anio} (20 % de los socios con carta)`; ev.target.classList.add('danger'); setTimeout(() => { delete ev.target.dataset.confirm; ev.target.textContent = 'Sortear 20 % para auditoría'; ev.target.classList.remove('danger'); }, 6000); return; }
+    delete ev.target.dataset.confirm; ev.target.textContent = 'Sortear 20 % para auditoría'; ev.target.classList.remove('danger');
+    const { data, error } = await sb.rpc('admin_sortear_auditoria', { p_anio: anio });
+    setStatus(st, error ? 'No se pudo sortear: ' + error.message : `Sorteo ${anio}: ${data} socio${data === 1 ? '' : 's'} en auditoría. Cada uno ve el aviso en su pestaña Constancia.`, error ? 'err' : 'ok'); await recargar();
+  });
+  $('#tbody-cs').addEventListener('click', async ev => {
+    const st = $('#st-cs'), anio = Number($('#cs-anio').value);
+    if (ev.target.closest('[data-cscancel]')) { csAccion = { id: null, tipo: null }; renderConstancias(); return; }
+    const v = ev.target.closest('[data-csver]'); if (v) { const ca = cartas.find(x => x.id === v.dataset.csver); if (ca) await verCarta(ca, st); return; }
+    const ok = ev.target.closest('[data-csok]');
+    if (ok) { const { error } = await sb.from('cartas').update({ estado: 'aceptada', motivo: null }).eq('id', ok.dataset.csok); setStatus(st, error ? 'No se pudo: ' + error.message : 'Carta aceptada.', error ? 'err' : 'ok'); await recargar(); return; }
+    const no0 = ev.target.closest('[data-csno0]'); if (no0) { csAccion = { id: no0.dataset.csno0, tipo: 'rechazar' }; renderConstancias(); $(`[data-csmotivo="${no0.dataset.csno0}"]`).focus(); return; }
+    const no = ev.target.closest('[data-csno]');
+    if (no) { const motivo = $(`[data-csmotivo="${no.dataset.csno}"]`).value.trim(); if (!motivo) { setStatus(st, 'Escribe el motivo del rechazo; el socio lo verá.', 'err'); return; }
+      const { error } = await sb.from('cartas').update({ estado: 'rechazada', motivo }).eq('id', no.dataset.csno); csAccion = { id: null, tipo: null };
+      setStatus(st, error ? 'No se pudo: ' + error.message : 'Carta rechazada; el socio ve el motivo y puede subir una corregida.', error ? 'err' : 'ok'); await recargar(); return; }
+    const e0 = ev.target.closest('[data-csemitir0]'); if (e0) { csAccion = { id: e0.dataset.csemitir0, tipo: 'emitir' }; renderConstancias(); return; }
+    const em = ev.target.closest('[data-csemitir]');
+    if (em) { csAccion = { id: null, tipo: null }; const { data, error } = await sb.rpc('admin_emitir_constancia', { p_centro: em.dataset.csemitir, p_anio: anio });
+      setStatus(st, error ? 'No se pudo emitir: ' + error.message : `Constancia emitida con folio ${data}. El socio ya puede descargarla.`, error ? 'err' : 'ok'); await recargar(); return; }
+    const as = ev.target.closest('[data-csaudsave]');
+    if (as) { const k = constDe(as.dataset.csaudsave, anio); const { error } = await sb.from('constancias').update({ auditoria: $(`[data-csaud="${as.dataset.csaudsave}"]`).value.trim() || null }).eq('id', k.id);
+      setStatus(st, error ? 'No se pudo guardar: ' + error.message : 'Resultado de auditoría guardado; aparecerá en la constancia.', error ? 'err' : 'ok'); await recargar(); return; }
   });
 
   // ---------- admin: exportar Excel IFSO ----------
