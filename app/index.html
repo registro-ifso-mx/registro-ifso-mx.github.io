@@ -1405,13 +1405,13 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
   }
   $('#seg-centro').addEventListener('change', renderSeguimiento);
   $('#seg-activar').addEventListener('click', async () => {
-    const { error } = await sb.from('centros').update({ seguimiento: true }).eq('id', perfil.centro_id);
+    const { error } = await sb.rpc('centro_seguimiento', { p_activo: true });
     if (error) { setStatus($('#st-seg2'), 'No se pudo activar: ' + error.message, 'err'); return; }
     await recargar(); renderSeguimiento();
   });
   $('#seg-desactivar').addEventListener('click', async ev => {
     if (!ev.target.dataset.confirm) { ev.target.dataset.confirm = '1'; ev.target.textContent = 'Confirmar: desactivar el seguimiento'; setTimeout(() => { delete ev.target.dataset.confirm; ev.target.textContent = 'Desactivar el seguimiento'; }, 5000); return; }
-    const { error } = await sb.from('centros').update({ seguimiento: false }).eq('id', perfil.centro_id);
+    const { error } = await sb.rpc('centro_seguimiento', { p_activo: false });
     if (error) { setStatus($('#st-seg2'), 'No se pudo desactivar: ' + error.message, 'err'); return; }
     try { await pushDesactivar(); } catch (e) {}
     await recargar(); renderSeguimiento();
