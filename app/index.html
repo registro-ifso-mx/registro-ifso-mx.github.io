@@ -17,7 +17,7 @@
 <script src="../config.js?v=20"></script>
 <script src="../graficas.js"></script>
 <script src="../constancias_pdf.js"></script>
-<link rel="stylesheet" href="../estilos.css?v=21">
+<link rel="stylesheet" href="../estilos.css?v=22">
 </head>
 <body>
 <div class="wrap">
@@ -331,7 +331,10 @@
       <table><thead><tr><th>Paciente</th><th>Control</th><th>Fecha</th><th class="num">Peso</th><th class="num">IMC</th><th class="num">%PPT</th><th>Comorbilidades</th><th>Eventos</th><th></th></tr></thead><tbody id="tbody-seg-hist"></tbody></table>
       <div class="empty" id="empty-seg-hist">Todavía no has capturado controles.</div>
     </div>
-    <p class="hint" style="margin-top:14px" id="seg-desactivar-wrap"><button class="btn link" type="button" id="seg-desactivar">Desactivar el seguimiento</button> (los controles capturados se conservan).</p>
+    <div class="seg-off-card" id="seg-desactivar-wrap">
+      <div><div class="seg-off-t">¿Ya no quieres llevar el seguimiento?</div><div class="hint" style="margin:0">Puedes desactivarlo cuando quieras. Los controles que ya capturaste se conservan y el registro no cambia.</div></div>
+      <button class="btn" type="button" id="seg-desactivar">Desactivar el seguimiento</button>
+    </div>
     <p class="status" id="st-seg2"></p>
   </div>
 </section>
