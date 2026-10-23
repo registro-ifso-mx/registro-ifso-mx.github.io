@@ -17,7 +17,7 @@
 <script src="../config.js?v=20"></script>
 <script src="../graficas.js"></script>
 <script src="../constancias_pdf.js?v=22"></script>
-<link rel="stylesheet" href="../estilos.css?v=22">
+<link rel="stylesheet" href="../estilos.css?v=23">
 </head>
 <body>
 <div class="wrap">
@@ -419,10 +419,8 @@
   <div class="kpis" id="cs-kpis"></div>
   <p class="hint" style="margin:0 0 10px">Cada socio sube una carta por hospital (1 dic – 15 ene). Aquí comparas lo que certifica la carta contra lo registrado en la app, aceptas o rechazas cada carta con motivo, sorteas al 20 % para la auditoría de la última semana de enero y, cuando todo está en orden, emites la constancia (folio y QR); el socio la descarga desde su cuenta. Una diferencia de hasta 10 % entre carta y registro se considera normal.</p>
   <p class="status" id="st-cs"></p>
-  <div class="tablewrap">
-    <table><thead><tr><th>Socio / hospital</th><th class="num">Carta</th><th class="num">Registro</th><th>Dif.</th><th>Alertas</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tbody-cs"></tbody></table>
-    <div class="empty" id="empty-cs">Todavía no hay cartas ni pacientes de este año.</div>
-  </div>
+  <div class="cs-lista" id="tbody-cs"></div>
+  <div class="empty" id="empty-cs">Todavía no hay cartas ni pacientes de este año.</div>
   <div class="card" style="margin-top:18px">
     <h2>Firmas de la constancia</h2>
     <p class="hint" style="margin:0 0 10px">Nombre y cargo tal como deben aparecer al pie de la constancia.</p>
@@ -1247,32 +1245,47 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     $('#cs-count').textContent = '';
     $('#empty-cs').hidden = socios.length > 0;
     const pct = (a, b) => b ? Math.round(Math.abs(a - b) / b * 100) : (a ? 100 : 0);
+    const difHtml = (a, b, big) => { if (!a) return `<b class="muted">—</b>`; const d = pct(a, b); return `<b class="${d > 10 ? 'bad' : 'ok'}">${d} %</b>`; };
     $('#tbody-cs').innerHTML = socios.map(c => {
       const k = constDe(c.id, anio), hs = hospsConst(c.id, anio), al = alertasDe(c.id, anio), sh = sinHosp(c.id, anio);
       const regTot = pacientes.filter(p => p.centro_id === c.id && p.fecha.startsWith(anio)).length;
       const cartaTot = hs.reduce((a, h) => { const ca = cartaDe(c.id, h.id, anio); return a + (ca ? ca.total : 0); }, 0);
       const acept = hs.filter(h => (cartaDe(c.id, h.id, anio) || {}).estado === 'aceptada').length;
       if (sh) al.push(`${sh} paciente${sh === 1 ? '' : 's'} sin hospital`);
-      let estado = k && k.estado === 'emitida' ? `<span class="pill" style="background:#e3f5ea;color:var(--ok)">Emitida</span><br><span class="code" style="font-size:.8rem;white-space:nowrap">${esc(k.folio)}</span>` : `${acept}/${hs.length} cartas aceptadas`;
-      if (k && k.muestreado) estado += ' <span class="pill" style="background:var(--warn-soft);color:var(--warn)">Auditoría</span>';
+      const emitida = k && k.estado === 'emitida';
+      let estado = emitida ? `<span class="pill ok">Constancia emitida</span> <span class="code">${esc(k.folio)}</span>` : `<span class="pill ${acept === hs.length && hs.length ? 'ok' : ''}">${acept} de ${hs.length} carta${hs.length === 1 ? '' : 's'} aceptada${acept === 1 ? '' : 's'}</span>`;
+      if (k && k.muestreado) estado += ` <span class="pill warn">En auditoría</span>`;
       let acc = '';
-      if (k && k.estado === 'emitida') acc = `<button class="rowbtn" data-descconst="${k.id}">Descargar PDF</button>`;
-      else if (acept > 0 && acept === hs.length) acc = csAccion.id === c.id && csAccion.tipo === 'emitir' ? `<button class="rowbtn confirm" data-csemitir="${c.id}">Confirmar: emitir constancia</button> <button class="rowbtn" data-cscancel="1">Cancelar</button>` : `<button class="rowbtn" data-csemitir0="${c.id}">Emitir constancia</button>`;
-      const aud = k && k.muestreado && !(k.estado === 'emitida') ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><input data-csaud="${c.id}" value="${esc(k.auditoria || '')}" placeholder="Resultado de la auditoría (p. ej. aprobada sin discrepancias)" style="min-height:34px;padding:4px 8px;width:260px"><button class="rowbtn" data-csaudsave="${c.id}">Guardar</button></div>` : '';
-      const filaSocio = `<tr style="background:var(--accent-soft)"><td style="white-space:normal"><b>${esc(c.nombre)}</b><br><span class="hint">${esc(perfilDe(c.id).cedula ? 'Cédula ' + perfilDe(c.id).cedula : 'sin cédula')}</span></td><td class="num">${cartaTot}</td><td class="num">${regTot}</td><td>${pct(cartaTot, regTot) > 10 && cartaTot ? `<span class="pill rev">${pct(cartaTot, regTot)} %</span>` : cartaTot ? pct(cartaTot, regTot) + ' %' : '—'}</td><td style="white-space:normal;min-width:200px">${al.map(a => `<span class="pill rev" style="display:inline-block;margin:1px 0;white-space:nowrap">${esc(a)}</span>`).join('<br>') || '—'}</td><td style="white-space:normal">${estado}</td><td style="white-space:normal;min-width:220px">${acc}${aud}</td></tr>`;
+      if (emitida) acc = `<button class="btn sm" data-descconst="${k.id}">Descargar PDF</button>`;
+      else if (acept > 0 && acept === hs.length) acc = csAccion.id === c.id && csAccion.tipo === 'emitir' ? `<button class="btn sm danger" data-csemitir="${c.id}">Confirmar: emitir constancia</button> <button class="btn sm" data-cscancel="1">Cancelar</button>` : `<button class="btn sm primary" data-csemitir0="${c.id}">Emitir constancia</button>`;
+      const aud = k && k.muestreado && !emitida ? `<div class="cs-aud"><input data-csaud="${c.id}" value="${esc(k.auditoria || '')}" placeholder="Resultado de la auditoría (p. ej. aprobada sin discrepancias)"><button class="btn sm" data-csaudsave="${c.id}">Guardar</button></div>` : '';
+      const alertas = al.length ? `<div class="cs-alertas">${al.map(a => `<span class="pill rev">⚠ ${esc(a)}</span>`).join('')}</div>` : '';
+      const ced = perfilDe(c.id).cedula;
+      const head = `<div class="cs-head">
+        <div class="cs-who"><div class="cs-name">${esc(c.nombre)}</div><div class="hint">${ced ? 'Cédula ' + esc(ced) : 'Sin cédula registrada'}</div></div>
+        <div class="cs-nums"><div class="cs-num"><b>${cartaTot || '—'}</b><span>carta</span></div><div class="cs-num"><b>${regTot}</b><span>registro</span></div><div class="cs-num">${difHtml(cartaTot, regTot)}<span>diferencia</span></div></div>
+        <div class="cs-state">${estado}</div>
+        <div class="cs-act">${acc}</div>
+      </div>`;
       const filasH = hs.map(h => {
         const ca = cartaDe(c.id, h.id, anio), m = mesesDe(c.id, h.id, anio), rt = m.reduce((a, b) => a + b, 0), d = ca ? pct(ca.total, rt) : null;
         let acc2 = '';
         if (ca) {
-          acc2 = `<button class="rowbtn" data-csver="${ca.id}">Ver carta</button> `;
-          if (ca.estado !== 'aceptada') acc2 += `<button class="rowbtn" data-csok="${ca.id}">Aceptar</button> `;
-          if (ca.estado !== 'rechazada') acc2 += csAccion.id === ca.id && csAccion.tipo === 'rechazar' ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><input data-csmotivo="${ca.id}" placeholder="Motivo (lo verá el socio)" style="min-height:34px;padding:4px 8px;width:220px"><button class="rowbtn confirm" data-csno="${ca.id}">Rechazar</button> <button class="rowbtn" data-cscancel="1">Cancelar</button></div>` : `<button class="rowbtn" data-csno0="${ca.id}">Rechazar</button>`;
+          acc2 = `<button class="btn sm" data-csver="${ca.id}">Ver carta</button>`;
+          if (ca.estado !== 'aceptada') acc2 += ` <button class="btn sm ok" data-csok="${ca.id}">Aceptar</button>`;
+          if (ca.estado !== 'rechazada') acc2 += csAccion.id === ca.id && csAccion.tipo === 'rechazar' ? `<div class="cs-aud"><input data-csmotivo="${ca.id}" placeholder="Motivo (lo verá el socio)"><button class="btn sm danger" data-csno="${ca.id}">Rechazar</button> <button class="btn sm" data-cscancel="1">Cancelar</button></div>` : ` <button class="btn sm" data-csno0="${ca.id}">Rechazar</button>`;
         }
-        const meses = `<span class="hint" style="font-variant-numeric:tabular-nums">${m.map((n, i) => MES3[i] + ' ' + n).join(' · ')}</span>`;
-        return `<tr><td style="white-space:normal;padding-left:22px">${esc(h.nombre)}${h.clues ? ` <span class="hint">CLUES ${esc(h.clues)}</span>` : ' <span class="pill rev">sin CLUES</span>'}<br>${meses}<br><span class="hint">${h.licencia ? 'Lic. ' + esc(h.licencia) : 'sin licencia'} · ${h.firmante ? esc(h.firmante) + (h.cargo_firmante ? ', ' + esc(h.cargo_firmante) : '') : 'sin firmante'} · ${esc(h.telefono || 'sin tel.')} · ${esc(h.correo_contacto || 'sin correo')}</span></td>
-          <td class="num">${ca ? ca.total : '—'}</td><td class="num">${rt}</td><td>${d == null ? '—' : d > 10 ? `<span class="pill rev">${d} %</span>` : d + ' %'}</td><td></td><td style="white-space:normal">${pillCarta(ca)}${ca ? `<br><span class="hint">${esc(ca.subida.slice(0, 10))}${ca.estado === 'rechazada' && ca.motivo ? ' · ' + esc(ca.motivo) : ''}</span>` : ''}</td><td style="white-space:normal;min-width:220px">${acc2}</td></tr>`;
+        const meses = `<div class="cs-meses">${m.map((n, i) => `<div class="${n ? '' : 'z'}"><span>${MES3[i]}</span><b>${n}</b></div>`).join('')}</div>`;
+        const datos = [h.licencia ? 'Lic. ' + esc(h.licencia) : '<span class="bad">sin licencia</span>', h.firmante ? esc(h.firmante) + (h.cargo_firmante ? ', ' + esc(h.cargo_firmante) : '') : '<span class="bad">sin firmante</span>', esc(h.telefono || 'sin teléfono'), esc(h.correo_contacto || 'sin correo')].join(' · ');
+        return `<div class="cs-h">
+          <div class="cs-hmain"><div class="cs-hname">${esc(h.nombre)} ${h.clues ? `<span class="hint">CLUES ${esc(h.clues)}</span>` : '<span class="pill rev">sin CLUES</span>'}</div><div class="hint">${datos}</div></div>
+          <div class="cs-hnums"><div class="cs-num"><b>${ca ? ca.total : '—'}</b><span>carta</span></div><div class="cs-num"><b>${rt}</b><span>registro</span></div><div class="cs-num">${d == null ? '<b class="muted">—</b>' : `<b class="${d > 10 ? 'bad' : 'ok'}">${d} %</b>`}<span>diferencia</span></div></div>
+          <div class="cs-hstate">${pillCarta(ca)}${ca ? `<div class="hint">${esc(ca.subida.slice(0, 10))}${ca.estado === 'rechazada' && ca.motivo ? '<br>' + esc(ca.motivo) : ''}</div>` : ''}</div>
+          <div class="cs-hact">${acc2}</div>
+          ${meses}
+        </div>`;
       }).join('');
-      return filaSocio + filasH;
+      return `<article class="cs-card${emitida ? ' emitida' : ''}">${head}${alertas}${aud}<div class="cs-hosp">${filasH}</div></article>`;
     }).join('');
   }
   $('#cs-anio').addEventListener('change', () => { csAccion = { id: null, tipo: null }; renderConstancias(); });
