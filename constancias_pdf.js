@@ -42,6 +42,12 @@
         par.split(' ').forEach(pal => { const p = cur ? cur + ' ' + pal : pal; if (f.widthOfTextAtSize(p, s) > mm(w) && cur) { out.push(cur); cur = pal; } else cur = p; }); out.push(cur); }); return out; },
       // Párrafo con salto automático; devuelve la y de la siguiente línea.
       parrafo(t, x, y, w, lh, opt){ opt = opt || {}; const ls = L.lineas(t, w, opt.size, opt.font); ls.forEach((l, i) => L.texto(l, opt.align === 'center' ? x + w / 2 : x, y + i * lh, opt)); return y + ls.length * lh; },
+      // Párrafo justificado (la última línea queda alineada a la izquierda).
+      parrafoJ(t, x, y, w, lh, opt){ opt = opt || {}; const s = opt.size || L.size, f = opt.font || L.font; const ls = L.lineas(t, w, s, f);
+        ls.forEach((l, i) => { const pal = l.split(' '); if (i === ls.length - 1 || pal.length < 2) { L.texto(l, x, y + i * lh, opt); return; }
+          const tw = pal.reduce((acc, pw) => acc + f.widthOfTextAtSize(limpio(pw), s), 0); const gap = (mm(w) - tw) / (pal.length - 1); let px = mm(x);
+          pal.forEach(pw => { page.drawText(limpio(pw), { x: px, y: H - mm(y + i * lh), size: s, font: f, color: L.rgb(opt.color || L.color) }); px += f.widthOfTextAtSize(limpio(pw), s) + gap; }); });
+        return y + ls.length * lh; },
       rect(x, y, w, h, fill, stroke, lw){ page.drawRectangle({ x: mm(x), y: H - mm(y) - mm(h), width: mm(w), height: mm(h), color: fill ? L.rgb(fill) : undefined, borderColor: stroke ? L.rgb(stroke) : undefined, borderWidth: stroke ? (lw || 0.4) : 0 }); },
       linea(x1, y1, x2, y2, c, lw){ page.drawLine({ start: { x: mm(x1), y: H - mm(y1) }, end: { x: mm(x2), y: H - mm(y2) }, thickness: lw || 0.4, color: L.rgb(c || [120, 120, 120]) }); }
     };
@@ -69,39 +75,46 @@
   // d = { hospital:{nombre, licencia, firmante, cargo_firmante, telefono, correo_contacto, domicilio, municipio, entidad},
   //       socio, cedula, anio, meses:[12 números del registro], ciudad }
   async function carta(d){
-    const { pdf, fonts, L } = await nuevo();
-    const W = 215.9, M = 22, CW = W - 2 * M, LH = 5.6;
+    const { pdf, page, fonts, L } = await nuevo();
+    const W = 215.9, M = 25, CW = W - 2 * M, LH = 5.9;
     const h = d.hospital || {};
     const total = (d.meses || []).reduce((a, b) => a + (b || 0), 0);
     const lin = v => o(v, '______________________');
-    L.set(fonts.reg, 11, [0, 0, 0]); // margen superior libre para el membrete del hospital
-    let y = 48;
-    L.texto(`${o(d.ciudad, lin(h.municipio))}, a ____ de ______________ de ${d.anio + 1}`, W - M, y, { align: 'right' }); y += 12;
+    const LINEA = [205, 205, 215];
+    L.set(fonts.reg, 11, [20, 20, 30]);
+    let y = 44; // margen superior libre para el membrete del hospital
+    L.texto(`${o(d.ciudad, lin(h.municipio))}, a ____ de ______________ de ${d.anio + 1}`, W - M, y, { align: 'right' }); y += 10;
     L.texto('Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.', M, y, { font: fonts.bold }); y += LH;
     L.texto('Registro Bariátrico México', M, y, { font: fonts.bold }); y += LH;
-    L.texto('P r e s e n t e', M, y); y += 10;
-    const cuerpo = `El que suscribe, ${lin(h.firmante)}, en mi carácter de ${o(h.cargo_firmante, 'representante legal / director general')} de ${o(h.nombre, '______________________')}, con licencia sanitaria / aviso de funcionamiento ante COFEPRIS número ${lin(h.licencia)}, ubicado en ${o(h.domicilio, lin([h.municipio, h.entidad].filter(Boolean).join(', ')))}, teléfono ${lin(h.telefono)}, correo ${lin(h.correo_contacto)}, hago constar bajo protesta de decir verdad que el/la Dr(a). ${o(d.socio, '______________________')}, cédula de especialidad ${lin(d.cedula)}, realizó en este establecimiento, durante el periodo del 1 de enero al 31 de diciembre de ${d.anio}, las cirugías bariátricas y metabólicas que se indican, de acuerdo con el registro de quirófano de esta institución:`;
-    y = L.parrafo(cuerpo, M, y, CW, LH) + 4;
-    // Tabla de meses en dos columnas
-    const colW = CW / 2, rowH = 6.6, x0 = M, x1 = M + colW;
-    [x0, x1].forEach(x => { L.rect(x, y, colW, rowH, LILA, [190, 190, 190]); L.texto('Mes', x + 3, y + 4.5, { font: fonts.bold, size: 9.5 }); L.texto('Cirugías', x + colW - 3, y + 4.5, { font: fonts.bold, size: 9.5, align: 'right' }); });
+    L.texto('P r e s e n t e', M, y); y += 9;
+    L.texto('Asunto:', M, y, { font: fonts.bold }); L.texto(`Cirugías bariátricas y metabólicas realizadas en ${d.anio}`, M + 17, y); y += 9;
+    const cuerpo = `El que suscribe, ${lin(h.firmante)}, en mi carácter de ${o(h.cargo_firmante, 'representante legal / director general')} de ${o(h.nombre, '______________________')}, con licencia sanitaria / aviso de funcionamiento ante COFEPRIS número ${lin(h.licencia)}, ubicado en ${lin(h.domicilio)}, teléfono ${lin(h.telefono)}, correo ${lin(h.correo_contacto)}, hago constar bajo protesta de decir verdad que el/la Dr(a). ${o(d.socio, '______________________')}, cédula de especialidad ${lin(d.cedula)}, realizó en este establecimiento, durante el periodo del 1 de enero al 31 de diciembre de ${d.anio}, las cirugías bariátricas y metabólicas que se indican, de acuerdo con el registro de quirófano de esta institución:`;
+    y = L.parrafoJ(cuerpo, M, y, CW, LH) + 4;
+    // Tabla de meses en dos columnas (líneas finas, encabezado y total con fondo claro)
+    const colW = CW / 2, rowH = 6.5, x0 = M, x1 = M + colW;
+    [x0, x1].forEach(x => { L.rect(x, y, colW, rowH, LILA, LINEA); L.texto('Mes', x + 4, y + 4.8, { font: fonts.bold, size: 9.5, color: NAVY }); L.texto('Cirugías', x + colW - 4, y + 4.8, { font: fonts.bold, size: 9.5, align: 'right', color: NAVY }); });
     y += rowH;
     for (let i = 0; i < 6; i++) {
-      [[i, x0], [i + 6, x1]].forEach(([m, x]) => { L.rect(x, y, colW, rowH, null, [190, 190, 190]); L.texto(MESES[m], x + 3, y + 4.5, { size: 10.5 }); L.texto(String(d.meses && d.meses[m] != null ? d.meses[m] : ''), x + colW - 3, y + 4.5, { size: 10.5, align: 'right' }); });
+      [[i, x0], [i + 6, x1]].forEach(([m, x]) => { L.rect(x, y, colW, rowH, null, LINEA); L.texto(MESES[m], x + 4, y + 4.8, { size: 10.5 }); L.texto(String(d.meses && d.meses[m] != null ? d.meses[m] : ''), x + colW - 4, y + 4.8, { size: 10.5, align: 'right' }); });
       y += rowH;
     }
-    L.rect(x0, y, CW, rowH, LILA2, [190, 190, 190]);
-    L.texto('Total anual ' + d.anio, x0 + 3, y + 4.5, { font: fonts.bold, size: 10.5 }); L.texto(String(total), x0 + CW - 3, y + 4.5, { font: fonts.bold, size: 10.5, align: 'right' }); y += rowH + 7;
-    y = L.parrafo('Se extiende la presente para los fines del Registro Bariátrico México del CMCOEM. No contiene datos personales de pacientes.', M, y, CW, LH) + 22;
-    L.linea(M, y, M + 85, y); L.linea(W - M - 60, y, W - M, y); y += 5;
-    L.texto(o(h.firmante, 'Nombre y firma'), M, y, { size: 9.5 }); L.texto('Sello del establecimiento', W - M - 30, y, { size: 9.5, align: 'center' }); y += 4.5;
-    L.texto(o(h.cargo_firmante, 'Representante legal / Director general'), M, y, { size: 9.5, color: GRIS }); y += 4.5;
-    L.parrafo(o(h.nombre, ''), M, y, 95, 4.5, { size: 9.5, color: GRIS });
-    const nombre = `Carta_${(h.nombre || 'hospital').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_')}_${d.anio}.pdf`;
+    L.rect(x0, y, CW, rowH + 1, LILA2, LINEA);
+    L.texto('Total anual ' + d.anio, x0 + 4, y + 5.3, { font: fonts.bold, size: 10.5, color: NAVY }); L.texto(String(total), x0 + CW - 4, y + 5.3, { font: fonts.bold, size: 11, align: 'right', color: NAVY }); y += rowH + 8;
+    y = L.parrafoJ('Se extiende la presente para los fines del Registro Bariátrico México del CMCOEM. No contiene datos personales de pacientes.', M, y, CW, LH) + 7;
+    L.texto('Atentamente', M, y); y += 20;
+    L.linea(M, y, M + 80, y, [90, 90, 100]); L.linea(W - M - 60, y, W - M, y, [90, 90, 100]); y += 5;
+    L.texto(o(h.firmante, 'Nombre y firma'), M, y, { font: fonts.bold, size: 10 }); L.texto('Sello del establecimiento', W - M - 30, y, { size: 9, align: 'center', color: GRIS }); y += 4.8;
+    L.texto(o(h.cargo_firmante, 'Representante legal / Director general'), M, y, { size: 9.5, color: GRIS }); y += 4.8;
+    L.parrafo(o(h.nombre, ''), M, y, 90, 4.6, { size: 9.5, color: GRIS });
+    // Sello discreto del Colegio en la esquina inferior derecha
+    const img = await logo();
+    if (img) { try { const jpg = await pdf.embedJpg(img); page.drawImage(jpg, { x: mm(W - M - 15), y: page.getHeight() - mm(270), width: mm(15), height: mm(15) }); } catch (e) {} }
+    L.texto('Registro Bariátrico México', W - M - 17, 262, { size: 7, color: [150, 150, 160], align: 'right' });
+    L.texto('Formato para la constancia anual de participación', W - M - 17, 265.5, { size: 7, color: [150, 150, 160], align: 'right' });
+    const nombre = `Carta_${(h.nombre || 'hospital').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '_')}_${d.anio}.pdf`;
     return { pdf, nombre, save: () => descargar(pdf, nombre) };
   }
 
-  // Texto plano de la misma carta (para pegar en Word con el membrete del hospital).
   function cartaTexto(d){
     const h = d.hospital || {}, lin = v => o(v, '[__________]');
     const total = (d.meses || []).reduce((a, b) => a + (b || 0), 0);
