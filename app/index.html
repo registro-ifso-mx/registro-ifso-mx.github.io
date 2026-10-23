@@ -17,7 +17,7 @@
 <script src="../config.js?v=20"></script>
 <script src="../graficas.js"></script>
 <script src="../constancias_pdf.js?v=22"></script>
-<link rel="stylesheet" href="../estilos.css?v=23">
+<link rel="stylesheet" href="../estilos.css?v=24">
 </head>
 <body>
 <div class="wrap">
@@ -590,7 +590,7 @@
     await recargar();
     $('#who-centro').textContent = esAdmin() || centroNombre(perfil.centro_id) === (perfil.nombre || '') ? '' : '· ' + centroNombre(perfil.centro_id);
     let t = null; try { t = localStorage.getItem('ifso.tab'); } catch(e){}
-    const hashTab = (location.hash || '').slice(1); if (hashTab === 'seguimiento') { t = 'seguimiento'; history.replaceState(null, '', location.pathname); }
+    const hashTab = (location.hash || '').slice(1); if (['seguimiento', 'constancia', 'constancias'].includes(hashTab)) { t = hashTab; history.replaceState(null, '', location.pathname); }
     irA(tabs.some(x => x[0] === t) ? t : (esAdmin() ? 'centros' : 'captura'));
   }
   function irA(tab){
@@ -1133,7 +1133,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
     avisoConstancia();
     const sh = sinHosp(c, anio);
     let est = '';
-    if (k && k.estado === 'emitida') est += `<div class="banner" style="background:#e3f5ea"><b>Constancia ${anio} emitida</b> · Folio <span class="code">${esc(k.folio)}</span> · ${esc((k.emitida || '').slice(0, 10))}<br><button class="btn primary" type="button" style="margin-top:8px" data-descconst="${k.id}">Descargar constancia (PDF con QR)</button></div>`;
+    if (k && k.estado === 'emitida') est += `<div class="estado-card ok"><div><div class="estado-t">Tu constancia ${anio} está lista</div><div class="hint" style="margin:0">Folio <b class="code">${esc(k.folio)}</b> · emitida el ${esc((k.emitida || '').slice(0, 10))} · verificable en registrobariatrico.com/verificar</div></div><button class="btn primary" type="button" data-descconst="${k.id}">Descargar constancia (PDF con QR)</button></div>`;
     else if (k && k.muestreado) est += `<div class="banner">Tu registro ${anio} fue seleccionado en el <b>muestreo aleatorio de auditoría</b> (20 % de los socios). Coordinación comparará tus cartas con lo registrado y puede pedirte copia del registro de quirófano; tendrás 15 días para aclarar cualquier diferencia.</div>`;
     if (sh) est += `<div class="banner">${sh} paciente${sh === 1 ? '' : 's'} de ${anio} sin hospital asignado: no cuenta${sh === 1 ? '' : 'n'} para la carta. Ve a <b>Registros</b>, toca cada uno y elige el hospital.</div>`;
     $('#const-estado').innerHTML = est;
@@ -1145,9 +1145,11 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
       const cargo = `<div class="field"><label for="hf-cargo-${h.id}">Cargo de quien firma</label><select id="hf-cargo-${h.id}" data-hf="cargo_firmante"><option value="">Elige…</option>${CARGOS.map(x => `<option ${h.cargo_firmante === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`;
       const faltanDatos = !(h.licencia && h.firmante && h.telefono && h.correo_contacto);
       let estado;
-      if (!ca) estado = `<span class="hint">Todavía no has subido la carta de este hospital.</span>`;
-      else if (ca.estado === 'rechazada') estado = `<span class="hint" style="color:var(--danger)">Carta rechazada${ca.motivo ? ': ' + esc(ca.motivo) : ''}. Corrige y vuelve a subirla.</span>`;
-      else estado = `<span class="hint">Carta subida el ${esc(ca.subida.slice(0, 10))} · certifica <b>${ca.total}</b> cirugías · ${ca.estado === 'aceptada' ? 'aceptada por Coordinación' : 'en revisión'}.</span> <button class="btn link" type="button" data-hver="${h.id}">Ver carta</button>`;
+      const ver = ca ? `<button class="btn" type="button" data-hver="${h.id}">Ver carta subida</button>` : '';
+      if (!ca) estado = `<div class="estado-card"><div><div class="estado-t">Falta subir la carta firmada</div><div class="hint" style="margin:0">Descarga el formato, llévalo al hospital para firma y sello, y súbelo aquí en PDF o foto.</div></div></div>`;
+      else if (ca.estado === 'rechazada') estado = `<div class="estado-card bad"><div><div class="estado-t">Carta rechazada por Coordinación</div><div class="hint" style="margin:0">${ca.motivo ? 'Motivo: ' + esc(ca.motivo) + '. ' : ''}Corrige y vuelve a subirla.</div></div>${ver}</div>`;
+      else if (ca.estado === 'aceptada') estado = `<div class="estado-card ok"><div><div class="estado-t">Carta aceptada por Coordinación</div><div class="hint" style="margin:0">Subida el ${esc(ca.subida.slice(0, 10))} · certifica <b>${ca.total}</b> cirugías.</div></div>${ver}</div>`;
+      else estado = `<div class="estado-card info"><div><div class="estado-t">Carta en revisión</div><div class="hint" style="margin:0">Subida el ${esc(ca.subida.slice(0, 10))} · certifica <b>${ca.total}</b> cirugías. Coordinación la revisará y te avisará por correo y en el celular.</div></div>${ver}</div>`;
       const puedeSubir = !ca || ca.estado !== 'aceptada';
       return `<div class="card const-h" data-h="${h.id}">
         <h2 style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">${esc(h.nombre)} ${pillCarta(ca)}</h2>
