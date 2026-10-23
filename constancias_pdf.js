@@ -74,9 +74,7 @@
     const h = d.hospital || {};
     const total = (d.meses || []).reduce((a, b) => a + (b || 0), 0);
     const lin = v => o(v, '______________________');
-    L.set(fonts.reg, 8.5, GRIS);
-    L.parrafo('Imprimir en papel membretado del hospital. Este formato lo genera el Registro Bariátrico México con los datos capturados por el cirujano; el hospital verifica y corrige las cifras contra su registro de quirófano antes de firmar.', M, 14, CW, 4);
-    L.set(fonts.reg, 11, [0, 0, 0]);
+    L.set(fonts.reg, 11, [0, 0, 0]); // margen superior libre para el membrete del hospital
     let y = 48;
     L.texto(`${o(d.ciudad, lin(h.municipio))}, a ____ de ______________ de ${d.anio + 1}`, W - M, y, { align: 'right' }); y += 12;
     L.texto('Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.', M, y, { font: fonts.bold }); y += LH;
@@ -99,7 +97,6 @@
     L.texto(o(h.firmante, 'Nombre y firma'), M, y, { size: 9.5 }); L.texto('Sello del establecimiento', W - M - 30, y, { size: 9.5, align: 'center' }); y += 4.5;
     L.texto(o(h.cargo_firmante, 'Representante legal / Director general'), M, y, { size: 9.5, color: GRIS }); y += 4.5;
     L.parrafo(o(h.nombre, ''), M, y, 95, 4.5, { size: 9.5, color: GRIS });
-    L.texto('Carta anual para la constancia de participación en el Registro Bariátrico México · registrobariatrico.com · contacto@registrobariatrico.com', W / 2, 268, { size: 8, color: [150, 150, 150], align: 'center' });
     const nombre = `Carta_${(h.nombre || 'hospital').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_')}_${d.anio}.pdf`;
     return { pdf, nombre, save: () => descargar(pdf, nombre) };
   }
