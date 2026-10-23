@@ -163,3 +163,46 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .seg-off-card .seg-off-t{font-weight:700;margin-bottom:4px}
 .seg-off-card .btn{flex:0 0 auto}
 @media (max-width:560px){.seg-off-card .btn{flex:1 1 100%}}
+
+/* Coordinación · Constancias: una tarjeta por socio */
+.btn.sm{padding:6px 12px;min-height:34px;font-size:.84rem;border-radius:7px}
+.btn.ok{color:var(--ok);border-color:var(--ok)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.cs-lista{display:flex;flex-direction:column;gap:14px}
+.cs-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.cs-card.emitida{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.cs-head{display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(120px,.8fr) auto;gap:14px 22px;align-items:center;padding:14px 18px;background:var(--accent-soft)}
+.cs-name{font-weight:700;font-size:1.05rem}
+.cs-nums{display:flex;gap:18px}
+.cs-num{text-align:center;min-width:54px}
+.cs-num b{display:block;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.cs-num span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.cs-num b.ok{color:var(--ok)} .cs-num b.bad{color:var(--danger)} .cs-num b.muted{color:var(--muted)}
+.cs-state{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cs-state .code{font-size:.82rem}
+.cs-act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cs-alertas{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px 0}
+.cs-aud{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 18px 0}
+.cs-aud input{min-height:34px;padding:4px 10px;flex:1 1 220px}
+.cs-hosp{padding:6px 18px 14px}
+.cs-h{display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(120px,.8fr) auto;gap:12px 22px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.cs-h:first-child{border-top:0}
+.cs-hname{font-weight:600;margin-bottom:6px}
+.cs-meses{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;grid-column:1/-1;max-width:640px;margin:2px 0 0}
+.cs-hmain,.cs-who{min-width:0}
+.cs-meses div{text-align:center;border:1px solid var(--line);border-radius:6px;padding:4px 0;background:var(--bg)}
+.cs-meses div span{display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase}
+.cs-meses div b{display:block;font-size:.9rem;font-variant-numeric:tabular-nums}
+.cs-meses div.z b{color:var(--muted);font-weight:500}
+.cs-hnums{display:flex;gap:14px}
+.cs-hstate .hint{margin-top:4px}
+.cs-hact{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cs-hact .cs-aud{padding:0;width:100%}
+.bad{color:var(--danger)}
+@media (max-width:860px){
+  .cs-head,.cs-h{grid-template-columns:1fr 1fr}
+  .cs-who,.cs-hmain{grid-column:1/-1}
+  .cs-act,.cs-hact{grid-column:1/-1;justify-content:flex-start}
+  .cs-meses{max-width:none}
+}
