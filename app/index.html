@@ -16,7 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="../config.js?v=20"></script>
 <script src="../graficas.js"></script>
-<script src="../constancias_pdf.js"></script>
+<script src="../constancias_pdf.js?v=21"></script>
 <link rel="stylesheet" href="../estilos.css?v=22">
 </head>
 <body>
@@ -1170,6 +1170,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
           <button class="btn primary" type="button" data-hpdf="${h.id}">Descargar formato de carta (PDF)</button>
           <button class="btn" type="button" data-htxt="${h.id}">Copiar texto</button>
         </div>
+        <p class="hint" style="margin:6px 0 0">El PDF sale limpio, con el margen superior libre: el hospital lo imprime en su papel membretado, revisa las cifras contra su registro de quirófano, pone la fecha, firma y sella.</p>
         ${puedeSubir ? `<div class="actions" style="margin-top:10px;align-items:end">
           <div class="field" style="flex:0 0 190px"><label for="ht-${h.id}">Total anual que certifica la carta</label><input id="ht-${h.id}" type="number" inputmode="numeric" min="0" max="5000" value="${ca ? ca.total : tot}" data-htotal="${h.id}"></div>
           <button class="btn" type="button" data-hup="${h.id}">${ca ? 'Subir carta corregida' : 'Subir carta firmada'} (PDF o foto)</button>
