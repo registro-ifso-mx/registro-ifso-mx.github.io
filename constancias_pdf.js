@@ -169,7 +169,7 @@ Sello del establecimiento`;
     });
     L.rect(M, y, CW, rowH, LILA2, [190, 190, 190]);
     L.texto('Total verificado', x[0] + 3, y + 4.8, { font: fonts.bold, size: 10 }); L.texto(String(c.total ?? ''), x[2] + cols[2] - 3, y + 4.8, { font: fonts.bold, size: 10, align: 'right' }); y += rowH + 7;
-    const aud = c.auditoria ? `Auditoría ${c.anio}: ${c.auditoria}.` : (c.muestreado ? `Auditoría ${c.anio}: seleccionado en el muestreo aleatorio.` : `Auditoría ${c.anio}: no seleccionado en el muestreo aleatorio.`);
+    const aud = `Auditoría ${c.anio}: ${c.auditoria ? c.auditoria.toUpperCase() : 'VERIFICADO'}`;
     y = L.parrafo(aud, M, y, CW, 5.2, { size: 10, color: [60, 60, 60] }) + 3;
     const fe = c.emitida ? new Date(c.emitida + 'T12:00:00') : new Date();
     y = L.parrafo(`Se expide en la Ciudad de México el ${fechaLarga(fe)} para los fines que al interesado convengan, en particular ante el Consejo Mexicano de Cirugía General, A.C.`, M, y, CW, 5.2, { size: 10, color: [60, 60, 60] });
