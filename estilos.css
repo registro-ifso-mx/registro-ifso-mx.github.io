@@ -206,3 +206,11 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
   .cs-act,.cs-hact{grid-column:1/-1;justify-content:flex-start}
   .cs-meses{max-width:none}
 }
+.estado-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg);margin:12px 0}
+.estado-card>div{flex:1 1 16rem}
+.estado-card .estado-t{font-weight:700;margin-bottom:3px}
+.estado-card .btn{flex:0 0 auto}
+.estado-card.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))} .estado-card.ok .estado-t{color:var(--ok)}
+.estado-card.info{border-color:var(--primary);background:var(--accent-soft)}
+.estado-card.bad{border-color:var(--danger);background:var(--danger-soft)} .estado-card.bad .estado-t{color:var(--danger)}
+@media (max-width:560px){.estado-card .btn{flex:1 1 100%}}
