@@ -63,7 +63,7 @@
       <dt>Año</dt><dd>${esc(data.anio)}</dd>
       <dt>Hospitales</dt><dd>${hs || '—'}</dd>
       <dt>Total verificado</dt><dd><b>${esc(data.total)}</b> procedimientos</dd>
-      <dt>Auditoría</dt><dd>${esc(data.auditoria || (data.muestreado ? 'seleccionado en el muestreo aleatorio' : 'no seleccionado en el muestreo aleatorio'))}</dd>
+      <dt>Auditoría</dt><dd>${esc(data.auditoria ? data.auditoria.toUpperCase() : 'VERIFICADO')}</dd>
       <dt>Emitida</dt><dd>${esc(data.emitida)}</dd></dl>`;
   }
 })();
