@@ -7,7 +7,7 @@ self.addEventListener('push', e => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Registro Bariátrico México', {
     body: d.body || 'Tienes controles de seguimiento pendientes este mes.',
-    icon: '/icon-192.png', badge: '/icon-192.png', tag: 'seguimiento', renotify: false, data: { url: d.url || '/app/#seguimiento' }
+    icon: '/icon-192.png', badge: '/badge-96.png', tag: 'seguimiento', renotify: false, data: { url: d.url || '/app/#seguimiento' }
   }));
 });
 self.addEventListener('notificationclick', e => {
