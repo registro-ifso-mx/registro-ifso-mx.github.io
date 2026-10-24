@@ -1391,7 +1391,7 @@ Colegio Mexicano de Cirugía para la Obesidad y Enfermedades Metabólicas, A.C.`
   $('#seg-push').addEventListener('click', async ev => {
     const b = ev.target.closest('[data-push]'); if (!b) return; b.disabled = true;
     try {
-      if (b.dataset.push === 'test') { const reg = await navigator.serviceWorker.ready; await reg.showNotification('Registro Bariátrico México', { body: 'Así se verá el aviso mensual de seguimiento. Toca para abrir la app.', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'prueba', data: { url: '/app/#seguimiento' } }); setStatus($('#st-push'), 'Aviso de prueba enviado: revisa la barra de notificaciones del teléfono.', 'ok'); b.disabled = false; return; }
+      if (b.dataset.push === 'test') { const reg = await navigator.serviceWorker.ready; await reg.showNotification('Registro Bariátrico México', { body: 'Así se verá el aviso mensual de seguimiento. Toca para abrir la app.', icon: '/icon-192.png', badge: '/badge-96.png', tag: 'prueba', data: { url: '/app/#seguimiento' } }); setStatus($('#st-push'), 'Aviso de prueba enviado: revisa la barra de notificaciones del teléfono.', 'ok'); b.disabled = false; return; }
       if (b.dataset.push === 'on') await pushActivar(); else await pushDesactivar();
     } catch (e) { setStatus($('#st-push'), 'No se pudo: ' + e.message, 'err'); }
     await renderPushBanner();
